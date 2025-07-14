@@ -1,0 +1,7 @@
+# Ignora node_modules solo en carpetas específicas
+api/.env
+api/node_modules/
+web/node_modules/
+
+api/package-lock.json
+web/package-lock.json
