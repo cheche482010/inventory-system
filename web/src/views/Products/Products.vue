@@ -2,14 +2,14 @@
   <div class="products">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h1>Productos</h1>
-      <router-link 
+      <button 
         v-if="canCreate" 
-        to="/products/create" 
+        @click="createProduct"
         class="btn btn-primary"
       >
         <font-awesome-icon icon="plus" class="me-2" />
         Nuevo Producto
-      </router-link>
+      </button>
     </div>
 
     <!-- Filters -->
@@ -100,14 +100,14 @@
                       >
                         <font-awesome-icon icon="eye" />
                       </button>
-                      <router-link 
+                      <button 
                         v-if="canCreate"
-                        :to="`/products/${product.id}/edit`"
+                        @click="editProduct(product)"
                         class="btn btn-outline-warning"
                         title="Editar"
                       >
                         <font-awesome-icon icon="edit" />
-                      </router-link>
+                      </button>
                       <button 
                         v-if="canDelete"
                         class="btn btn-outline-danger"
@@ -158,130 +158,26 @@
       :product="selectedProduct"
       @close="selectedProduct = null"
     />
+
+    <!-- Product Form Modal -->
+    <div v-if="showProductForm" class="modal show d-block" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">{{ editingProduct ? 'Editar Producto' : 'Nuevo Producto' }}</h5>
+            <button type="button" class="btn-close" @click="closeProductForm"></button>
+          </div>
+          <div class="modal-body">
+            <ProductForm 
+              :product="editingProduct"
+              @success="handleFormSuccess"
+              @cancel="closeProductForm"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
-<script>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { useProductStore } from '@/stores/products'
-import { brandService } from '@/services/brandService'
-import { categoryService } from '@/services/categoryService'
-import { useToast } from 'vue-toastification'
-import ProductModal from '@/components/Products/ProductModal.vue'
-
-let searchTimeout
-
-export default {
-  name: 'Products',
-  components: {
-    ProductModal
-  },
-  setup() {
-    const authStore = useAuthStore()
-    const productStore = useProductStore()
-    const toast = useToast()
-    
-    const brands = ref([])
-    const categories = ref([])
-    const selectedProduct = ref(null)
-    
-    const products = computed(() => productStore.products)
-    const loading = computed(() => productStore.loading)
-    const pagination = computed(() => productStore.pagination)
-    const filters = computed(() => productStore.filters)
-    
-    const canCreate = computed(() => authStore.canCreate)
-    const canDelete = computed(() => authStore.canDelete)
-
-    const visiblePages = computed(() => {
-      const current = pagination.value.currentPage
-      const total = pagination.value.totalPages
-      const pages = []
-      
-      for (let i = Math.max(1, current - 2); i <= Math.min(total, current + 2); i++) {
-        pages.push(i)
-      }
-      
-      return pages
-    })
-
-    const loadData = async () => {
-      await Promise.all([
-        productStore.fetchProducts(),
-        loadBrands(),
-        loadCategories()
-      ])
-    }
-
-    const loadBrands = async () => {
-      try {
-        const response = await brandService.getAll()
-        brands.value = response.data
-      } catch (error) {
-        console.error('Error loading brands:', error)
-      }
-    }
-
-    const loadCategories = async () => {
-      try {
-        const response = await categoryService.getAll()
-        categories.value = response.data
-      } catch (error) {
-        console.error('Error loading categories:', error)
-      }
-    }
-
-    const applyFilters = () => {
-      productStore.setFilters(filters.value)
-      productStore.fetchProducts()
-    }
-
-    const debouncedSearch = () => {
-      clearTimeout(searchTimeout)
-      searchTimeout = setTimeout(() => {
-        applyFilters()
-      }, 500)
-    }
-
-    const changePage = (page) => {
-      if (page >= 1 && page <= pagination.value.totalPages) {
-        productStore.setPage(page)
-        productStore.fetchProducts()
-      }
-    }
-
-    const viewProduct = (product) => {
-      selectedProduct.value = product
-    }
-
-    const confirmDelete = (product) => {
-      if (confirm(`¿Estás seguro de eliminar el producto ${product.code}?`)) {
-        productStore.deleteProduct(product.id)
-      }
-    }
-
-    onMounted(() => {
-      loadData()
-    })
-
-    return {
-      products,
-      loading,
-      pagination,
-      filters,
-      brands,
-      categories,
-      selectedProduct,
-      canCreate,
-      canDelete,
-      visiblePages,
-      applyFilters,
-      debouncedSearch,
-      changePage,
-      viewProduct,
-      confirmDelete
-    }
-  }
-}
-</script>
+<script src="./Products.js"></script>

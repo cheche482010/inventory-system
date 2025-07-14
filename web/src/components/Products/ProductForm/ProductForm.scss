@@ -1,0 +1,17 @@
+@import '@/assets/styles/main.scss';
+
+.product-form {
+    .card {
+        @include card-shadow;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: var(--border-radius);
+
+        &:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+    }
+}

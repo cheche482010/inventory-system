@@ -24,18 +24,6 @@ const routes = [
         component: () => import("@/views/Products/Products.vue"),
       },
       {
-        path: "/products/create",
-        name: "ProductCreate",
-        component: () => import("@/views/Products/ProductForm.vue"),
-        meta: { requiresRole: ["admin", "dev"] },
-      },
-      {
-        path: "/products/:id/edit",
-        name: "ProductEdit",
-        component: () => import("@/views/Products/ProductForm.vue"),
-        meta: { requiresRole: ["admin", "dev"] },
-      },
-      {
         path: "/brands",
         name: "Brands",
         component: () => import("@/views/Brands/Brands.vue"),
