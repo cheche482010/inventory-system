@@ -14,12 +14,12 @@ export default {
     const authStore = useAuthStore()
     const productStore = useProductStore()
     const toast = useToast()
-    
+
     const brands = ref([])
     const loading = ref(false)
     const showCreateModal = ref(false)
     const editingBrand = ref(null)
-    
+
     const canCreate = computed(() => authStore.canCreate)
     const canDelete = computed(() => authStore.canDelete)
 

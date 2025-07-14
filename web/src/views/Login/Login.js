@@ -7,12 +7,12 @@ export default {
   setup() {
     const router = useRouter()
     const authStore = useAuthStore()
-    
+
     const form = ref({
       email: '',
       password: ''
     })
-    
+
     const loading = ref(false)
 
     const handleLogin = async () => {
