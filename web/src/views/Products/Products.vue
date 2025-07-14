@@ -2,11 +2,7 @@
   <div class="products">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h1>Productos</h1>
-      <button 
-        v-if="canCreate" 
-        @click="createProduct"
-        class="btn btn-primary"
-      >
+      <button v-if="canCreate" @click="createProduct" class="btn btn-primary">
         <font-awesome-icon icon="plus" class="me-2" />
         Nuevo Producto
       </button>
@@ -18,13 +14,8 @@
         <div class="row g-3">
           <div class="col-md-4">
             <label class="form-label">Buscar</label>
-            <input
-              type="text"
-              class="form-control"
-              placeholder="Código o nombre..."
-              v-model="filters.search"
-              @input="debouncedSearch"
-            />
+            <input type="text" class="form-control" placeholder="Código o nombre..." v-model="filters.search"
+              @input="debouncedSearch" />
           </div>
           <div class="col-md-2">
             <label class="form-label">Estado</label>
@@ -64,7 +55,7 @@
         <div v-if="loading" class="loading-spinner">
           <div class="spinner-border text-primary"></div>
         </div>
-        
+
         <div v-else>
           <div class="table-responsive">
             <table class="table">
@@ -93,27 +84,15 @@
                   <td>${{ product.price }}</td>
                   <td>
                     <div class="btn-group btn-group-sm">
-                      <button 
-                        class="btn btn-outline-info"
-                        @click="viewProduct(product)"
-                        title="Ver"
-                      >
+                      <button class="btn btn-outline-info" @click="viewProduct(product)" title="Ver">
                         <font-awesome-icon icon="eye" />
                       </button>
-                      <button 
-                        v-if="canCreate"
-                        @click="editProduct(product)"
-                        class="btn btn-outline-warning"
-                        title="Editar"
-                      >
+                      <button v-if="canCreate" @click="editProduct(product)" class="btn btn-outline-warning"
+                        title="Editar">
                         <font-awesome-icon icon="edit" />
                       </button>
-                      <button 
-                        v-if="canDelete"
-                        class="btn btn-outline-danger"
-                        @click="confirmDelete(product)"
-                        title="Eliminar"
-                      >
+                      <button v-if="canDelete" class="btn btn-outline-danger" @click="confirmDelete(product)"
+                        title="Eliminar">
                         <font-awesome-icon icon="trash" />
                       </button>
                     </div>
@@ -131,12 +110,8 @@
                   Anterior
                 </button>
               </li>
-              <li 
-                v-for="page in visiblePages" 
-                :key="page"
-                class="page-item" 
-                :class="{ active: page === pagination.currentPage }"
-              >
+              <li v-for="page in visiblePages" :key="page" class="page-item"
+                :class="{ active: page === pagination.currentPage }">
                 <button class="page-link" @click="changePage(page)">
                   {{ page }}
                 </button>
@@ -153,11 +128,7 @@
     </div>
 
     <!-- Product View Modal -->
-    <ProductModal 
-      v-if="selectedProduct"
-      :product="selectedProduct"
-      @close="selectedProduct = null"
-    />
+    <ProductModal v-if="selectedProduct" :product="selectedProduct" @close="selectedProduct = null" />
 
     <!-- Product Form Modal -->
     <div v-if="showProductForm" class="modal show d-block" tabindex="-1">
@@ -168,11 +139,7 @@
             <button type="button" class="btn-close" @click="closeProductForm"></button>
           </div>
           <div class="modal-body">
-            <ProductForm 
-              :product="editingProduct"
-              @success="handleFormSuccess"
-              @cancel="closeProductForm"
-            />
+            <ProductForm :product="editingProduct" @success="handleFormSuccess" @cancel="closeProductForm" />
           </div>
         </div>
       </div>
