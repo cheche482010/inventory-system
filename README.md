@@ -55,6 +55,3 @@ npm run dev
 - **Admin**: admin@inventory.com / admin123
 - **User**: user@inventory.com / user123
 - **Dev**: dev@inventory.com / dev123
-```
-
-Ahora creemos el backend completo:
