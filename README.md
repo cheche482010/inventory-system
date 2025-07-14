@@ -4,30 +4,30 @@ Sistema de inventario completo para gestión de productos de tienda.
 
 ## Estructura del Proyecto
 
-\`\`\`
+```
 inventory-system/
 ├── api/          # Backend Node.js
 ├── web/          # Frontend Vue.js
 └── README.md
-\`\`\`
+```
 
 ## Instalación y Ejecución
 
 ### Backend (API)
-\`\`\`bash
+```bash
 cd api
 npm install
 npm run migrate
 npm run seed
 npm run dev
-\`\`\`
+```
 
 ### Frontend (Web)
-\`\`\`bash
+```bash
 cd web
 npm install
 npm run dev
-\`\`\`
+```
 
 ## Características
 
@@ -55,6 +55,6 @@ npm run dev
 - **Admin**: admin@inventory.com / admin123
 - **User**: user@inventory.com / user123
 - **Dev**: dev@inventory.com / dev123
-\`\`\`
+```
 
 Ahora creemos el backend completo:
