@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3000
 app.use(helmet())
 app.use(
   cors({
-    origin: "https://inventory-system-back-wtos.onrender.com",
+    origin: "https://inventory-system-tu7j.onrender.com",
     credentials: true,
   }),
 )
