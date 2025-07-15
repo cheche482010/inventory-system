@@ -19,7 +19,6 @@ app.use(
   cors({
     origin: "https://inventory-system-tu7j.onrender.com",
     credentials: true,
-    exposedHeaders: ['Authorization']
   }),
 )
 
