@@ -47,11 +47,28 @@ export default {
             })
         }
 
+        const generateActivityMessage = (activity) => {
+            const userName = `${activity.user?.firstName} ${activity.user?.lastName}`
+            const actionText = getActionLabel(activity.action).toLowerCase()
+            const resourceText = getResourceLabel(activity.resource).toLowerCase()
+            const date = formatDate(activity.createdAt)
+            
+            let resourceName = ''
+            if (activity.details?.body?.name) {
+                resourceName = ` "${activity.details.body.name}"`
+            } else if (activity.resourceId) {
+                resourceName = ` con ID ${activity.resourceId}`
+            }
+            
+            return `El usuario ${userName} ${actionText === 'crear' ? 'creó' : actionText === 'actualizar' ? 'actualizó' : 'eliminó'} ${resourceText === 'producto' ? 'el producto' : resourceText === 'marca' ? 'la marca' : resourceText === 'categoría' ? 'la categoría' : 'el usuario'}${resourceName} el ${date}`
+        }
+
         return {
             getActionBadgeColor,
             getActionLabel,
             getResourceLabel,
-            formatDate
+            formatDate,
+            generateActivityMessage
         }
     }
 }

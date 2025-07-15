@@ -68,6 +68,14 @@
             </div>
           </div>
 
+          <div class="mt-3">
+            <h6>Resumen de la Acción</h6>
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              {{ generateActivityMessage(activity) }}
+            </div>
+          </div>
+
           <div v-if="activity.details" class="mt-3">
             <h6>Detalles Técnicos</h6>
             <pre class="bg-light p-3 rounded"><code>{{ JSON.stringify(activity.details, null, 2) }}</code></pre>
