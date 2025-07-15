@@ -47,6 +47,16 @@ const routes = [
       },
     ],
   },
+  {
+    path: "/403",
+    name: "Forbidden",
+    component: () => import("@/views/Errors/403/403.vue"),
+  },
+  {
+    path: "/:catchAll(.*)",
+    name: "NotFound",
+    component: () => import("@/views/Errors/404/404.vue"),
+  },
 ]
 
 const router = createRouter({
@@ -62,7 +72,7 @@ router.beforeEach((to, from, next) => {
   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
     next("/")
   } else if (to.meta.requiresRole && !to.meta.requiresRole.includes(authStore.user?.role)) {
-    next("/")
+    next("/403")
   } else {
     next()
   }

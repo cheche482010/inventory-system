@@ -1,4 +1,4 @@
-@import '@/assets/styles/main.scss';
+@use '@/assets/styles/main.scss' as *;
 
 .product-form {
     .card {
