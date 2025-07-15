@@ -5,9 +5,7 @@ import { useAuthStore } from "@/stores/auth"
 import { useToast } from "vue-toastification"
 
 const api = axios.create({
-  baseURL: import.meta.env.PROD
-    ? "https://inventory-system-back-wtos.onrender.com/api"  // Producción
-    : "/api",  // Desarrollo (usa el proxy de Vite)
+  baseURL: "https://inventory-system-back-wtos.onrender.com/api",  // Desarrollo (usa el proxy de Vite)
   timeout: 10000,
   withCredentials: true
 })
