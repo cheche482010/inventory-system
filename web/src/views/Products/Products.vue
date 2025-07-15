@@ -12,10 +12,19 @@
     <div class="card mb-4">
       <div class="card-body">
         <div class="row g-3">
-          <div class="col-md-4">
+          <div class="col-md-3">
             <label class="form-label">Buscar</label>
             <input type="text" class="form-control" placeholder="Código o nombre..." v-model="filters.search"
               @input="debouncedSearch" />
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Mostrar</label>
+            <select class="form-select" v-model="filters.perPage" @change="applyFilters">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="all">Todas</option>
+            </select>
           </div>
           <div class="col-md-2">
             <label class="form-label">Estado</label>
@@ -27,7 +36,7 @@
               <option value="agotado">Agotado</option>
             </select>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-2">
             <label class="form-label">Marca</label>
             <select class="form-select" v-model="filters.brandId" @change="applyFilters">
               <option value="">Todas</option>
@@ -57,7 +66,8 @@
         </div>
 
         <div v-else>
-          <div class="table-responsive">
+          <div class="table-responsive"
+            :style="{ maxHeight: filters.perPage === 'all' ? '500px' : 'none', overflowY: filters.perPage === 'all' ? 'auto' : 'visible' }">
             <table class="table">
               <thead>
                 <tr>
@@ -103,7 +113,7 @@
           </div>
 
           <!-- Pagination -->
-          <nav v-if="pagination.totalPages > 1">
+          <nav v-if="showPagination && pagination.totalPages > 1">
             <ul class="pagination justify-content-center">
               <li class="page-item" :class="{ disabled: pagination.currentPage === 1 }">
                 <button class="page-link" @click="changePage(pagination.currentPage - 1)">

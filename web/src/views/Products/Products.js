@@ -72,6 +72,8 @@ export default {
             }
         }
 
+        const showPagination = computed(() => filters.value.perPage !== 'all')
+
         const applyFilters = () => {
             productStore.setFilters(filters.value)
             productStore.fetchProducts()
@@ -138,6 +140,7 @@ export default {
             canCreate,
             canDelete,
             visiblePages,
+            showPagination,
             applyFilters,
             debouncedSearch,
             changePage,
