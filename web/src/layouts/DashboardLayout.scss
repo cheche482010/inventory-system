@@ -14,17 +14,15 @@
     display: flex;
     flex-direction: column;
     position: relative;
-    z-index: 10; // Asegura que el sidebar esté por encima del contenido principal en desktop/tablet
-
-    // Estado por defecto para desktop/tablet (abierto)
+    z-index: 10; 
     width: 250px;
 
     .nav-link {
         color: rgba(255, 255, 255, 0.8);
         transition: all 0.3s ease;
-        display: flex; // Usar flex para alinear icono y texto
+        display: flex; 
         align-items: center;
-        padding: var(--spacing-sm) var(--spacing-md); // Padding por defecto para estado abierto
+        padding: var(--spacing-sm) var(--spacing-md); 
 
         &:hover,
         &.active {
@@ -38,8 +36,7 @@
         }
 
         span {
-            // Etiqueta de texto
-            white-space: nowrap; // Evita que el texto se envuelva
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             transition: opacity 0.3s ease, width 0.3s ease;
@@ -52,33 +49,30 @@
         right: var(--spacing-md);
     }
 
-    // Estilos específicos para móvil (sidebar es pantalla completa y se desliza)
-    @media (max-width: 767.98px) {
+    @media (max-width: 768px) {
         position: fixed;
         top: 0;
         left: 0;
         height: 100%;
         width: 100%;
         max-width: none;
-        transform: translateX(-100%); // Inicialmente oculto a la izquierda
-        z-index: 1050; // Por encima del contenido principal
+        transform: translateX(-100%);
+        z-index: 1050;
 
         &.open {
-            transform: translateX(0); // Se desliza para mostrarse
+            transform: translateX(0); 
         }
 
         .close-btn {
-            display: block; // Mostrar botón de cerrar en móvil
+            display: block; 
         }
     }
 
-    // Estilos específicos para Desktop/Tablet
     @media (min-width: 768px) {
         .close-btn {
-            display: none; // Ocultar botón de cerrar en desktop/tablet
+            display: none; 
         }
 
-        // Estado abierto (por defecto)
         &.open {
             width: 250px;
 
@@ -90,31 +84,26 @@
                 }
 
                 span {
-                    width: auto; // Permitir que el texto ocupe todo el ancho
+                    width: auto; 
                     opacity: 1;
                 }
             }
 
             .text-white-50 {
-                // Información de usuario
                 display: block;
             }
 
             h5 {
-                // Título Inventario
                 display: block;
             }
 
             .btn-outline-light {
-
-                // Botón de cerrar sesión
                 span {
                     display: inline;
                 }
             }
         }
 
-        // Estado minimizado
         &.minimized {
             width: 80px;
             text-align: center;
