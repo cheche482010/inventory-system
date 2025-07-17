@@ -64,8 +64,13 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
+
+  // If we have a token but no user data, fetch it first
+  if (authStore.isAuthenticated && !authStore.user) {
+    await authStore.fetchUser()
+  }
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next("/login")
