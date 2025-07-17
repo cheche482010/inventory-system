@@ -1,102 +1,95 @@
 <template>
   <div class="dashboard-layout">
-    <div class="row g-0">
-      <!-- Sidebar -->
-      <div class="col-md-3 col-lg-2">
-        <nav class="sidebar p-3">
-          <div class="text-center mb-4">
-            <h5 class="text-white">Inventario</h5>
-            <small class="text-white-50">{{ user?.firstName }} {{ user?.lastName }}</small>
-          </div>
+    <!-- Overlay para móviles cuando el sidebar está abierto -->
+    <div class="sidebar-overlay" :class="{ 'show': isSidebarOpen && isMobile }" @click="toggleSidebar"></div>
 
-          <ul class="nav nav-pills flex-column">
-            <li class="nav-item mb-2">
-              <router-link to="/" class="nav-link" active-class="active">
-                <font-awesome-icon icon="home" class="me-2" />
-                Dashboard
-              </router-link>
-            </li>
-            <li class="nav-item mb-2">
-              <router-link to="/products" class="nav-link" active-class="active">
-                <font-awesome-icon icon="box" class="me-2" />
-                Productos
-              </router-link>
-            </li>
-            <li class="nav-item mb-2">
-              <router-link to="/brands" class="nav-link" active-class="active">
-                <font-awesome-icon icon="tags" class="me-2" />
-                Marcas
-              </router-link>
-            </li>
-            <li class="nav-item mb-2">
-              <router-link to="/categories" class="nav-link" active-class="active">
-                <font-awesome-icon icon="tags" class="me-2" />
-                Categorías
-              </router-link>
-            </li>
-            <li class="nav-item mb-2" v-if="canViewUsers">
-              <router-link to="/users" class="nav-link" active-class="active">
-                <font-awesome-icon icon="users" class="me-2" />
-                Usuarios
-              </router-link>
-            </li>
-            <li class="nav-item mb-2" v-if="canViewUsers">
-              <router-link to="/activities" class="nav-link" active-class="active">
-                <font-awesome-icon icon="history" class="me-2" />
-                Actividades
-              </router-link>
-            </li>
-          </ul>
+    <!-- Sidebar -->
+    <div class="sidebar" :class="{ 'open': isSidebarOpen, 'minimized': !isSidebarOpen && !isMobile }">
+      <nav class="p-3 d-flex flex-column h-100">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h5 class="text-white" v-if="isSidebarOpen">Inventario</h5>
+          <button class="btn d-md-none text-white close-btn" @click="toggleSidebar">
+            <font-awesome-icon icon="times" />
+          </button>
+        </div>
+        <div class="text-center mb-4" v-if="isSidebarOpen">
+          <small class="text-white-50">{{ user?.firstName }} {{ user?.lastName }}</small>
+        </div>
 
-          <div class="mt-auto pt-3">
-            <button @click="logout" class="btn btn-outline-light btn-sm w-100">
-              <font-awesome-icon icon="sign-out-alt" class="me-2" />
-              Cerrar Sesión
-            </button>
-          </div>
-        </nav>
-      </div>
+        <ul class="nav nav-pills flex-column mb-auto">
+          <li class="nav-item mb-2">
+            <router-link to="/" class="nav-link" active-class="active" @click="closeSidebarOnMobile">
+              <font-awesome-icon icon="home" :class="{ 'me-2': isSidebarOpen }" />
+              <span v-if="isSidebarOpen">Dashboard</span>
+            </router-link>
+          </li>
+          <li class="nav-item mb-2">
+            <router-link to="/products" class="nav-link" active-class="active" @click="closeSidebarOnMobile">
+              <font-awesome-icon icon="box" :class="{ 'me-2': isSidebarOpen }" />
+              <span v-if="isSidebarOpen">Productos</span>
+            </router-link>
+          </li>
+          <li class="nav-item mb-2">
+            <router-link to="/brands" class="nav-link" active-class="active" @click="closeSidebarOnMobile">
+              <font-awesome-icon icon="tags" :class="{ 'me-2': isSidebarOpen }" />
+              <span v-if="isSidebarOpen">Marcas</span>
+            </router-link>
+          </li>
+          <li class="nav-item mb-2">
+            <router-link to="/categories" class="nav-link" active-class="active" @click="closeSidebarOnMobile">
+              <font-awesome-icon icon="tags" :class="{ 'me-2': isSidebarOpen }" />
+              <span v-if="isSidebarOpen">Categorías</span>
+            </router-link>
+          </li>
+          <li class="nav-item mb-2" v-if="canViewUsers">
+            <router-link to="/users" class="nav-link" active-class="active" @click="closeSidebarOnMobile">
+              <font-awesome-icon icon="users" :class="{ 'me-2': isSidebarOpen }" />
+              <span v-if="isSidebarOpen">Usuarios</span>
+            </router-link>
+          </li>
+          <li class="nav-item mb-2" v-if="canViewUsers">
+            <router-link to="/activities" class="nav-link" active-class="active" @click="closeSidebarOnMobile">
+              <font-awesome-icon icon="history" :class="{ 'me-2': isSidebarOpen }" />
+              <span v-if="isSidebarOpen">Actividades</span>
+            </router-link>
+          </li>
+        </ul>
 
-      <!-- Main Content -->
-      <div class="col-md-9 col-lg-10">
-        <main class="main-content p-4">
-          <router-view />
-        </main>
-      </div>
+        <div class="mt-auto pt-3">
+          <button @click="logout" class="btn btn-outline-light" :class="{ 'btn-sm w-100': isSidebarOpen }">
+            <font-awesome-icon icon="sign-out-alt" :class="{ 'me-2': isSidebarOpen }" />
+            <span v-if="isSidebarOpen">Cerrar Sesión</span>
+          </button>
+        </div>
+      </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" :class="{ 'sidebar-minimized': !isSidebarOpen && !isMobile }">
+      <header class="navbar navbar-light bg-light p-3 shadow-sm">
+        <!-- Botón para móvil -->
+        <button class="btn btn-outline-primary d-md-none" @click="toggleSidebar">
+          <font-awesome-icon icon="bars" />
+        </button>
+        <!-- Botón para desktop/tablet -->
+        <button class="btn btn-outline-secondary d-none d-md-block" @click="toggleSidebar">
+          <font-awesome-icon :icon="isSidebarOpen ? 'chevron-left' : 'chevron-right'" />
+        </button>
+        <span class="navbar-brand mb-0 h1 ms-3 d-none d-md-block">Panel de Administración</span>
+        <div class="ms-auto d-flex align-items-center">
+          <span class="me-2 d-none d-sm-block text-muted">Hola, {{ user?.firstName }}!</span>
+          <button @click="logout" class="btn btn-sm btn-outline-danger d-none d-md-block">
+            <font-awesome-icon icon="sign-out-alt" class="me-2" />
+            Salir
+          </button>
+        </div>
+      </header>
+      <main class="p-4">
+        <router-view />
+      </main>
     </div>
   </div>
 </template>
 
-<script>
-import { computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
-
-export default {
-  name: 'DashboardLayout',
-  setup() {
-    const router = useRouter()
-    const authStore = useAuthStore()
-
-    const user = computed(() => authStore.user)
-    const canViewUsers = computed(() => ['admin', 'dev'].includes(authStore.user?.role))
-
-    const logout = () => {
-      authStore.logout()
-      router.push('/login')
-    }
-
-    onMounted(() => {
-      if (!authStore.user) {
-        authStore.fetchUser()
-      }
-    })
-
-    return {
-      user,
-      canViewUsers,
-      logout
-    }
-  }
-}
-</script>
+<style scoped src="./DashboardLayout.scss"></style>
+<script src="./DashboardLayout.js"></script>
