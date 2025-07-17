@@ -4,12 +4,16 @@ import axios from "axios"
 import { useAuthStore } from "@/stores/auth"
 import { useToast } from "vue-toastification"
 
+const toast = useToast()
+
+const url = import.meta.env.NODE_ENV === "production"
+  ? `${import.meta.env.PROD_BACKEND_URL}/api`
+  : `${import.meta.env.LOCAL_BACKEND_URL}/api`
+
 const api = axios.create({
-  baseURL: "/api",
+  baseURL: url,
   timeout: 10000,
 })
-
-const toast = useToast()
 
 // Request interceptor
 api.interceptors.request.use(
