@@ -17,7 +17,7 @@ export const useAuthStore = defineStore("auth", {
     isAuthenticated: (state) => !!state.token,
     userRole: (state) => state.user?.role,
     canCreate: (state) => ["admin", "dev"].includes(state.user?.role),
-    canDelete: (state) => state.user?.role === "dev",
+    canDelete: (state) => ["admin", "dev"].includes(state.user?.role),
   },
 
   actions: {
