@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { exportService } from '@/services/exportService'
 import { useToast } from 'vue-toastification'
+import { useAuthStore } from '@/stores/auth'
 
 export default {
   name: 'ExportDropdown',
@@ -17,8 +18,13 @@ export default {
   setup(props) {
     const toast = useToast()
     const loading = ref(false)
+    const authStore = useAuthStore()
+    const canExport = computed(() => authStore.canExport)
 
     const exportInfo = computed(() => {
+      if (!canExport.value) {
+        return 'Solo los usuarios admin y dev pueden exportar productos'
+      }
       const hasFilters = Object.values(props.filters).some(filter =>
         filter && filter !== '' && filter !== 'all'
       )
@@ -30,6 +36,10 @@ export default {
     })
 
     const exportToPDF = async () => {
+      if (!canExport.value) {
+        toast.warning('No tienes permisos para exportar productos')
+        return
+      }
       if (props.products.length === 0) {
         toast.warning('No hay productos para exportar')
         return
@@ -48,6 +58,10 @@ export default {
     }
 
     const exportToExcel = async () => {
+      if (!canExport.value) {
+        toast.warning('No tienes permisos para exportar productos')
+        return
+      }
       if (props.products.length === 0) {
         toast.warning('No hay productos para exportar')
         return
