@@ -13,6 +13,7 @@ const url = import.meta.env.NODE_ENV === "production"
 const api = axios.create({
   baseURL: url,
   timeout: 10000,
+  withCredentials: true
 })
 
 // Request interceptor
