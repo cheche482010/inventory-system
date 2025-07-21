@@ -35,6 +35,7 @@ export default {
 
         const canCreate = computed(() => authStore.canCreate)
         const canDelete = computed(() => authStore.canDelete)
+        const canExport = computed(() => authStore.canExport)
 
         const visiblePages = computed(() => {
             const current = pagination.value.currentPage
@@ -156,6 +157,7 @@ export default {
             editingProduct,
             canCreate,
             canDelete,
+            canExport,
             visiblePages,
             showPagination,
             applyFilters,
