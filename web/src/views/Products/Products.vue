@@ -7,6 +7,7 @@
           <font-awesome-icon icon="plus" class="me-2" />
           Nuevo Producto
         </button>
+        <ExportDropdown :products="products" :filters="filters" />
         <button @click="clearFilters" class="btn btn-outline-secondary">
           <font-awesome-icon icon="eraser" class="me-2" />
           Limpiar Filtros

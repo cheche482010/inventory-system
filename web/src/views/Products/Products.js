@@ -6,6 +6,7 @@ import { categoryService } from '@/services/categoryService'
 import { useToast } from 'vue-toastification'
 import ProductModal from '@/components/Products/ProductModal/ProductModal.vue'
 import ProductForm from '@/components/Products/ProductForm/ProductForm.vue'
+import ExportDropdown from '@/components/Products/ExportDropdown/ExportDropdown.vue'
 
 let searchTimeout
 
@@ -13,7 +14,8 @@ export default {
     name: 'Products',
     components: {
         ProductModal,
-        ProductForm
+        ProductForm,
+        ExportDropdown
     },
     setup() {
         const authStore = useAuthStore()

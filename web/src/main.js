@@ -35,7 +35,8 @@ import {
   faEraser,
   faFileExcel, 
   faFilePdf,
-  faDownload 
+  faDownload ,
+  faInfoCircle
 } from "@fortawesome/free-solid-svg-icons"
 
 library.add(
@@ -63,7 +64,8 @@ library.add(
   faEraser,
   faFileExcel, 
   faFilePdf ,
-  faDownload 
+  faDownload,
+  faInfoCircle 
 )
 
 import App from "./App.vue"
