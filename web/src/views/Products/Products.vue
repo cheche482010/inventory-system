@@ -2,10 +2,16 @@
   <div class="products">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h1>Productos</h1>
-      <button v-if="canCreate" @click="createProduct" class="btn btn-primary">
-        <font-awesome-icon icon="plus" class="me-2" />
-        Nuevo Producto
-      </button>
+      <div class="btn-group">
+        <button v-if="canCreate" @click="createProduct" class="btn btn-primary">
+          <font-awesome-icon icon="plus" class="me-2" />
+          Nuevo Producto
+        </button>
+        <button @click="clearFilters" class="btn btn-outline-secondary">
+          <font-awesome-icon icon="eraser" class="me-2" />
+          Limpiar Filtros
+        </button>
+      </div>
     </div>
 
     <!-- Filters -->
@@ -81,7 +87,15 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="product in products" :key="product.id">
+                <tr v-if="hasNoResults">
+                  <td colspan="7" class="text-center py-4">
+                    <div class="alert alert-info">
+                      <font-awesome-icon icon="exclamation-triangle" class="me-2" />
+                      No se encontraron productos que coincidan con los filtros aplicados.
+                    </div>
+                  </td>
+                </tr>
+                <tr v-for="product in products" :key="product.id" v-else>
                   <td>{{ product.code }}</td>
                   <td>{{ product.name.substring(0, 60) }}...</td>
                   <td>{{ product.brand?.name }}</td>

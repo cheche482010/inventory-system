@@ -46,6 +46,10 @@ export default {
             return pages
         })
 
+        const hasNoResults = computed(() => {
+            return products.value.length === 0 && !loading.value
+        })
+
         const loadData = async () => {
             await Promise.all([
                 productStore.fetchProducts(),
@@ -118,6 +122,17 @@ export default {
             editingProduct.value = null
         }
 
+        const clearFilters = () => {
+            productStore.setFilters({
+                search: "",
+                status: "",
+                brandId: "",
+                categoryId: "",
+                perPage: "10"
+            })
+            productStore.fetchProducts()
+        }
+
         const handleFormSuccess = () => {
             closeProductForm()
             loadData()
@@ -149,6 +164,8 @@ export default {
             createProduct,
             editProduct,
             closeProductForm,
+            clearFilters,
+            hasNoResults,
             handleFormSuccess
         }
     }

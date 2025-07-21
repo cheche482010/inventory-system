@@ -32,6 +32,7 @@ import {
   faUser,
   faLock,
   faUnlock,
+  faEraser,
 } from "@fortawesome/free-solid-svg-icons"
 
 library.add(
@@ -56,6 +57,7 @@ library.add(
   faUser,
   faLock,
   faUnlock,
+  faEraser 
 )
 
 import App from "./App.vue"
