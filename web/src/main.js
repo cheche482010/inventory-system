@@ -33,6 +33,9 @@ import {
   faLock,
   faUnlock,
   faEraser,
+  faFileExcel, 
+  faFilePdf,
+  faDownload 
 } from "@fortawesome/free-solid-svg-icons"
 
 library.add(
@@ -57,7 +60,10 @@ library.add(
   faUser,
   faLock,
   faUnlock,
-  faEraser 
+  faEraser,
+  faFileExcel, 
+  faFilePdf ,
+  faDownload 
 )
 
 import App from "./App.vue"
