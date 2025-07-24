@@ -5,6 +5,10 @@ export const userService = {
     return api.get("/users")
   },
 
+  searchUsers(params) {
+    return api.get("/users/search", { params })
+  },
+
   create(data) {
     return api.post("/users", data)
   },

@@ -1,10 +1,11 @@
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { userService } from '@/services/userService'
 import { useToast } from 'vue-toastification'
 import UserModal from '@/components/Users/UserModal/UserModal.vue'
 import UserViewModal from '@/components/Users/UserViewModal/UserViewModal.vue'
 import Swal from 'sweetalert2'
+import { debounce } from 'lodash'
 
 export default {
     name: 'Users',
@@ -21,21 +22,89 @@ export default {
         const showCreateModal = ref(false)
         const editingUser = ref(null)
         const viewingUser = ref(null)
+        const pagination = ref({
+            currentPage: 1,
+            totalPages: 1,
+            totalItems: 0,
+            itemsPerPage: 10
+        })
+
+        const filters = ref({
+            search: '',
+            role: '',
+            isActive: '',
+            page: 1,
+            limit: 10
+        })
 
         const canCreate = computed(() => authStore.canCreate)
         const currentUser = computed(() => authStore.user)
+        const hasNoResults = computed(() => !loading.value && users.value.length === 0)
+        const showPagination = computed(() => pagination.value.totalPages > 1)
 
         const loadUsers = async () => {
             loading.value = true
             try {
-                const response = await userService.getAll()
+                const params = {
+                    page: filters.value.page,
+                    limit: filters.value.limit,
+                    ...(filters.value.search && { search: filters.value.search }),
+                    ...(filters.value.role && { role: filters.value.role }),
+                    ...(filters.value.isActive !== '' && { isActive: filters.value.isActive })
+                }
+                
+                const response = await userService.searchUsers(params)
                 users.value = response.data
+                pagination.value = response.pagination
             } catch (error) {
                 toast.error('Error al cargar usuarios')
             } finally {
                 loading.value = false
             }
         }
+
+        const debouncedSearch = debounce(() => {
+            filters.value.page = 1
+            loadUsers()
+        }, 300)
+
+        const applyFilters = () => {
+            filters.value.page = 1
+            loadUsers()
+        }
+
+        const clearFilters = () => {
+            filters.value = {
+                search: '',
+                role: '',
+                isActive: '',
+                page: 1,
+                limit: 10
+            }
+            loadUsers()
+        }
+
+        const changePage = (page) => {
+            if (page >= 1 && page <= pagination.value.totalPages) {
+                filters.value.page = page
+                loadUsers()
+            }
+        }
+
+        const visiblePages = computed(() => {
+            const current = pagination.value.currentPage
+            const total = pagination.value.totalPages
+            const pages = []
+            
+            let start = Math.max(1, current - 2)
+            let end = Math.min(total, current + 2)
+            
+            for (let i = start; i <= end; i++) {
+                pages.push(i)
+            }
+            
+            return pages
+        })
 
         const getRoleBadgeColor = (role) => {
             const colors = {
@@ -118,8 +187,13 @@ export default {
             showCreateModal,
             editingUser,
             viewingUser,
+            filters,
+            pagination,
             canCreate,
             currentUser,
+            hasNoResults,
+            showPagination,
+            visiblePages,
             getRoleBadgeColor,
             getRoleLabel,
             viewUser,
@@ -127,7 +201,11 @@ export default {
             toggleUserStatus,
             closeModal,
             handleSaved,
-            formatDate
+            formatDate,
+            debouncedSearch,
+            applyFilters,
+            clearFilters,
+            changePage
         }
     }
 }
