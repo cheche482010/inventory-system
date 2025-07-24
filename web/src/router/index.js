@@ -45,6 +45,18 @@ const routes = [
         component: () => import("@/views/Activities/Activities.vue"),
         meta: { requiresRole: ["admin", "dev"] },
       },
+      {
+        path: "/permissions",
+        name: "Permissions",
+        component: () => import("@/views/Permissions/Permissions.vue"),
+        meta: { requiresRole: ["dev"] },
+      },
+      {
+        path: "/import",
+        name: "Import",
+        component: () => import("@/views/Import/Import.vue"),
+        meta: { requiresRole: ["admin", "dev"] },
+      },
     ],
   },
   {
@@ -75,7 +87,7 @@ router.beforeEach(async (to, from, next) => {
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next("/login")
   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    next("/")
+    next(authStore.initialRoute)
   } else if (to.meta.requiresRole && !to.meta.requiresRole.includes(authStore.user?.role)) {
     next("/403")
   } else {

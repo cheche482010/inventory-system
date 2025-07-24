@@ -36,6 +36,8 @@ import {
   faFileExcel, 
   faFilePdf,
   faDownload ,
+  faShieldAlt,
+  faUpload,
   faInfoCircle
 } from "@fortawesome/free-solid-svg-icons"
 
@@ -65,6 +67,8 @@ library.add(
   faFileExcel, 
   faFilePdf ,
   faDownload,
+  faShieldAlt,
+  faUpload,
   faInfoCircle 
 )
 

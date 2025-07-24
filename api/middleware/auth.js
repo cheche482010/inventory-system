@@ -35,4 +35,18 @@ const authorize = (...roles) => {
   }
 }
 
-module.exports = { authenticateToken, authorize }
+const checkPermission = (resource, action) => {
+  return async (req, res, next) => {
+    try {
+      const hasPermission = await req.user.hasPermission(resource, action)
+      if (!hasPermission) {
+        return res.status(403).json({ error: "Permisos insuficientes para esta acción" })
+      }
+      next()
+    } catch (error) {
+      return res.status(500).json({ error: "Error al verificar permisos" })
+    }
+  }
+}
+
+module.exports = { authenticateToken, authorize, checkPermission }

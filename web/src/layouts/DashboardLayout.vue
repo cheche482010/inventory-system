@@ -14,10 +14,14 @@
         </div>
         <div class="text-center mb-4" v-if="isSidebarOpen">
           <small class="text-white-50">{{ user?.firstName }} {{ user?.lastName }}</small>
+          <br>
+          <span class="badge" :class="`bg-${getRoleBadgeColor(user?.role)}`">
+            {{ getRoleLabel(user?.role) }}
+          </span>
         </div>
 
         <ul class="nav nav-pills flex-column mb-auto">
-          <li class="nav-item mb-2">
+          <li class="nav-item mb-2" v-if="canViewDashboard">
             <router-link to="/" class="nav-link" active-class="active" @click="closeSidebarOnMobile">
               <font-awesome-icon icon="home" :class="{ 'me-2': isSidebarOpen }" />
               <span v-if="isSidebarOpen">Dashboard</span>
@@ -29,13 +33,13 @@
               <span v-if="isSidebarOpen">Productos</span>
             </router-link>
           </li>
-          <li class="nav-item mb-2">
+          <li class="nav-item mb-2" v-if="canCreate">
             <router-link to="/brands" class="nav-link" active-class="active" @click="closeSidebarOnMobile">
               <font-awesome-icon icon="tags" :class="{ 'me-2': isSidebarOpen }" />
               <span v-if="isSidebarOpen">Marcas</span>
             </router-link>
           </li>
-          <li class="nav-item mb-2">
+          <li class="nav-item mb-2" v-if="canCreate">
             <router-link to="/categories" class="nav-link" active-class="active" @click="closeSidebarOnMobile">
               <font-awesome-icon icon="tags" :class="{ 'me-2': isSidebarOpen }" />
               <span v-if="isSidebarOpen">Categorías</span>
@@ -47,10 +51,22 @@
               <span v-if="isSidebarOpen">Usuarios</span>
             </router-link>
           </li>
-          <li class="nav-item mb-2" v-if="canViewUsers">
+          <li class="nav-item mb-2" v-if="canViewActivities">
             <router-link to="/activities" class="nav-link" active-class="active" @click="closeSidebarOnMobile">
               <font-awesome-icon icon="history" :class="{ 'me-2': isSidebarOpen }" />
               <span v-if="isSidebarOpen">Actividades</span>
+            </router-link>
+          </li>
+          <li class="nav-item mb-2" v-if="canViewPermissions">
+            <router-link to="/permissions" class="nav-link" active-class="active" @click="closeSidebarOnMobile">
+              <font-awesome-icon icon="shield-alt" :class="{ 'me-2': isSidebarOpen }" />
+              <span v-if="isSidebarOpen">Permisos</span>
+            </router-link>
+          </li>
+          <li class="nav-item mb-2" v-if="canImport">
+            <router-link to="/import" class="nav-link" active-class="active" @click="closeSidebarOnMobile">
+              <font-awesome-icon icon="upload" :class="{ 'me-2': isSidebarOpen }" />
+              <span v-if="isSidebarOpen">Importar Datos</span>
             </router-link>
           </li>
         </ul>

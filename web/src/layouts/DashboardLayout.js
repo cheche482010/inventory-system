@@ -1,3 +1,6 @@
+
+
+
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -16,11 +19,34 @@ export default {
         const mediaQuery = ref(null)
 
         const user = computed(() => authStore.user)
-        const canViewUsers = computed(() => ['admin', 'dev'].includes(authStore.user?.role))
+        const canCreate = computed(() => authStore.canCreate)
+        const canViewUsers = computed(() => authStore.canViewUsers)
+        const canViewActivities = computed(() => authStore.canViewActivities)
+        const canViewPermissions = computed(() => authStore.canViewPermissions)
+        const canViewDashboard = computed(() => authStore.canViewDashboard)
+        const canImport = computed(() => authStore.canImport)
+
+        const getRoleBadgeColor = (role) => {
+            const colors = {
+                dev: 'danger',
+                admin: 'warning',
+                user: 'info'
+            }
+            return colors[role] || 'secondary'
+        }
+
+        const getRoleLabel = (role) => {
+            const labels = {
+                dev: 'Desarrollador',
+                admin: 'Administrador',
+                user: 'Usuario'
+            }
+            return labels[role] || role
+        }
 
         const logout = () => {
             authStore.logout()
-            router.push('/login') 
+            router.push('/login')
         }
 
         const toggleSidebar = () => {
@@ -34,34 +60,41 @@ export default {
         }
 
         const handleMediaQueryChange = (e) => {
-            isMobile.value = !e.matches;
+            isMobile.value = !e.matches
             if (e.matches) {
-                isSidebarOpen.value = true;
+                isSidebarOpen.value = true
             } else {
-                isSidebarOpen.value = false;
+                isSidebarOpen.value = false
             }
-        };
+        }
 
         onMounted(() => {
             if (!authStore.user) {
                 authStore.fetchUser()
             }
 
-            mediaQuery.value = window.matchMedia('(min-width: 768px)');
-            isMobile.value = !mediaQuery.value.matches;
-            isSidebarOpen.value = mediaQuery.value.matches;
-            mediaQuery.value.addEventListener('change', handleMediaQueryChange);
+            mediaQuery.value = window.matchMedia('(min-width: 768px)')
+            isMobile.value = !mediaQuery.value.matches
+            isSidebarOpen.value = mediaQuery.value.matches
+            mediaQuery.value.addEventListener('change', handleMediaQueryChange)
         })
 
         onUnmounted(() => {
             if (mediaQuery.value) {
-                mediaQuery.value.removeEventListener('change', handleMediaQueryChange);
+                mediaQuery.value.removeEventListener('change', handleMediaQueryChange)
             }
-        });
+        })
 
         return {
             user,
+            canCreate,
             canViewUsers,
+            canViewActivities,
+            canViewPermissions,
+            canViewDashboard,
+            canImport,
+            getRoleBadgeColor,
+            getRoleLabel,
             logout,
             isSidebarOpen,
             isMobile,
@@ -70,3 +103,4 @@ export default {
         }
     }
 }
+

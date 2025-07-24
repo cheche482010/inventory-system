@@ -28,6 +28,8 @@ db.Brand = require("./Brand")(sequelize, Sequelize.DataTypes)
 db.Category = require("./Category")(sequelize, Sequelize.DataTypes)
 db.Product = require("./Product")(sequelize, Sequelize.DataTypes)
 db.ActivityLog = require("./ActivityLog")(sequelize, Sequelize.DataTypes)
+db.Permission = require("./Permission")(sequelize, Sequelize.DataTypes)
+db.UserPermission = require("./UserPermission")(sequelize, Sequelize.DataTypes)
 
 // Define associations
 Object.keys(db).forEach((modelName) => {
