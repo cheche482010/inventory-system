@@ -12,6 +12,9 @@ export default {
         const toast = useToast()
 
         const activities = ref([])
+        const hasNoResults = computed(() => {
+            return !loading.value && activities.value.length === 0
+        })
         const loading = ref(false)
         const selectedActivity = ref(null)
         const pagination = ref({
@@ -122,6 +125,7 @@ export default {
             pagination,
             filters,
             visiblePages,
+            hasNoResults,
             getActionBadgeColor,
             getActionLabel,
             getResourceLabel,

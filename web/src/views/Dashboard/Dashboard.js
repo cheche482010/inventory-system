@@ -20,6 +20,8 @@ export default {
         const recentActivities = ref([])
 
         const user = computed(() => authStore.user)
+        const hasNoRecentProducts = computed(() => !loading.value && recentProducts.value.length === 0)
+        const hasNoRecentActivities = computed(() => !loading.value && recentActivities.value.length === 0)
 
         const loadDashboardData = async () => {
             loading.value = true
@@ -67,7 +69,9 @@ export default {
             stats,
             recentProducts,
             recentActivities,
-            formatDate
+            formatDate,
+            hasNoRecentProducts,
+            hasNoRecentActivities
         }
     }
 }

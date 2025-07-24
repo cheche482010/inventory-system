@@ -71,6 +71,14 @@
                     </tr>
                   </thead>
                   <tbody>
+                    <tr v-if="hasNoRecentProducts">
+                      <td colspan="4" class="text-center py-4">
+                        <div class="alert alert-info">
+                          <font-awesome-icon icon="info-circle" class="me-2" />
+                          No hay productos recientes para mostrar.
+                        </div>
+                      </td>
+                    </tr>
                     <tr v-for="product in recentProducts" :key="product.id">
                       <td>{{ product.code }}</td>
                       <td>{{ product.name.substring(0, 50) }}...</td>
@@ -96,6 +104,12 @@
           </div>
           <div class="card-body">
             <div class="list-group list-group-flush">
+              <div v-if="hasNoRecentActivities" class="list-group-item text-center py-4">
+                <div class="alert alert-info">
+                  <font-awesome-icon icon="info-circle" class="me-2" />
+                  No hay actividades recientes para mostrar.
+                </div>
+              </div>
               <div v-for="activity in recentActivities" :key="activity.id" class="list-group-item px-0">
                 <div class="d-flex justify-content-between">
                   <small class="text-muted">{{ activity.action }}</small>

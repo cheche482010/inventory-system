@@ -39,6 +39,14 @@
                 </tr>
               </thead>
               <tbody>
+                <tr v-if="hasNoResults">
+                  <td colspan="7" class="text-center py-4">
+                    <div class="alert alert-info">
+                      <font-awesome-icon icon="exclamation-triangle" class="me-2" />
+                      No se encontraron actividades que coincidan con los filtros aplicados.
+                    </div>
+                  </td>
+                </tr>
                 <tr v-for="activity in activities" :key="activity.id">
                   <td>{{ formatDate(activity.createdAt) }}</td>
                   <td>
