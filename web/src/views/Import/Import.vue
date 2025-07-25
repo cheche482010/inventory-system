@@ -8,9 +8,66 @@
     <!-- Vista previa -->
     <div v-if="excelData.length">
       <h5>Vista previa:</h5>
+      
+      <!-- Controles de filtrado -->
+      <div class="row mb-3">
+        <div class="col-md-2">
+          <label class="form-label">Mostrar:</label>
+          <select v-model="pageSize" @change="currentPage = 1" class="form-select form-select-sm">
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="40">40</option>
+            <option value="50">50</option>
+            <option :value="excelData.length">Todos</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Buscar:</label>
+          <input v-model="searchText" type="text" class="form-control form-control-sm" 
+                 placeholder="Código o nombre...">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Precio:</label>
+          <select v-model="priceFilter" class="form-select form-select-sm">
+            <option value="">Todos</option>
+            <option value="0-50">$0 - $50</option>
+            <option value="50-100">$50 - $100</option>
+            <option value="100-500">$100 - $500</option>
+            <option value="500+">$500+</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Marca:</label>
+          <select v-model="brandFilter" class="form-select form-select-sm">
+            <option value="">Todas</option>
+            <option v-for="brand in uniqueBrands" :key="brand" :value="brand">{{ brand }}</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Categoría:</label>
+          <select v-model="categoryFilter" class="form-select form-select-sm">
+            <option value="">Todas</option>
+            <option v-for="category in uniqueCategories" :key="category" :value="category">{{ category }}</option>
+          </select>
+        </div>
+        <div class="col-md-1 d-flex align-items-end">
+          <button @click="clearFilters" class="btn btn-outline-secondary btn-sm w-100" title="Limpiar filtros">
+            <font-awesome-icon icon="times" />
+          </button>
+        </div>
+      </div>
+
+      <!-- Información de resultados -->
+      <div class="mb-2">
+        <small class="text-muted">
+          Mostrando {{ startIndex + 1 }} - {{ Math.min(startIndex + pageSize, filteredData.length) }} 
+          de {{ filteredData.length }} productos
+        </small>
+      </div>
+
       <div class="table-container mb-3">
-        <table class="table table-bordered table-sm">
-          <thead class="table-dark">
+        <table class="table table-bordered table-sm table-hover">
+          <thead class="table-dark sticky-top">
             <tr>
               <th>Código</th>
               <th>Nombre</th>
@@ -22,18 +79,29 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(item, index) in paginatedData" :key="index">
-              <td>{{ item.producto.code }}</td>
+            <tr v-if="filteredData.length === 0">
+              <td colspan="7" class="text-center py-4">
+                <div class="text-muted">
+                  <font-awesome-icon icon="search" size="2x" class="mb-2" />
+                  <p class="mb-0">No se encontraron resultados con los filtros aplicados</p>
+                  <small>Intenta ajustar los criterios de búsqueda</small>
+                </div>
+              </td>
+            </tr>
+            <tr v-for="(item, index) in paginatedData" :key="index" v-else>
+              <td><strong>{{ item.producto.code }}</strong></td>
               <td>{{ item.producto.name }}</td>
-              <td>$ {{ item.producto.price }}</td>
-              <td>{{ item.producto.marca.name }}</td>
-              <td>{{ item.producto.categories.name }}</td>
+              <td class="text-success fw-bold">$ {{ item.producto.price }}</td>
+              <td><span class="badge bg-secondary">{{ item.producto.marca.name }}</span></td>
+              <td><span class="badge bg-info">{{ item.producto.categories.name }}</span></td>
 
               <!-- Descripción -->
               <td>
                 <div v-if="!item.editingDesc">
                   <span>{{ item.producto.descripcion }}</span>
-                  <button class="btn btn-sm btn-outline-primary ms-2" @click="editDesc(index + startIndex)">+</button>
+                  <button class="btn btn-sm btn-outline-primary ms-2" @click="editDesc(index + startIndex)">
+                    <font-awesome-icon :icon="item.producto.descripcion ? 'edit' : 'plus'" />
+                  </button>
                 </div>
                 <div v-else>
                   <input v-model="item.tempDesc" class="form-control form-control-sm"
@@ -60,7 +128,7 @@
       </div>
 
       <!-- Paginación -->
-      <nav>
+      <nav v-if="totalPages > 1">
         <ul class="pagination justify-content-center flex-wrap">
           <li class="page-item" :class="{ disabled: currentPage === 1 }">
             <button class="page-link" @click="currentPage = 1">&laquo;</button>
@@ -124,18 +192,68 @@ export default {
       excelData: [],
       currentPage: 1,
       pageSize: 10,
-      inputPage: 1
+      inputPage: 1,
+      searchText: '',
+      priceFilter: '',
+      brandFilter: '',
+      categoryFilter: ''
     };
   },
   computed: {
+    filteredData() {
+      let filtered = this.excelData;
+
+      if (this.searchText) {
+        const search = this.searchText.toLowerCase();
+        filtered = filtered.filter(item => 
+          item.producto.code.toLowerCase().includes(search) ||
+          item.producto.name.toLowerCase().includes(search)
+        );
+      }
+
+      if (this.priceFilter) {
+        filtered = filtered.filter(item => {
+          const price = item.producto.price;
+          switch (this.priceFilter) {
+            case '0-50': return price >= 0 && price <= 50;
+            case '50-100': return price > 50 && price <= 100;
+            case '100-500': return price > 100 && price <= 500;
+            case '500+': return price > 500;
+            default: return true;
+          }
+        });
+      }
+
+      if (this.brandFilter) {
+        filtered = filtered.filter(item => 
+          item.producto.marca.name === this.brandFilter
+        );
+      }
+
+      if (this.categoryFilter) {
+        filtered = filtered.filter(item => 
+          item.producto.categories.name === this.categoryFilter
+        );
+      }
+
+      return filtered;
+    },
+    uniqueBrands() {
+      const brands = [...new Set(this.excelData.map(item => item.producto.marca.name))];
+      return brands.filter(brand => brand).sort();
+    },
+    uniqueCategories() {
+      const categories = [...new Set(this.excelData.map(item => item.producto.categories.name))];
+      return categories.filter(category => category).sort();
+    },
     totalPages() {
-      return Math.ceil(this.excelData.length / this.pageSize);
+      return Math.ceil(this.filteredData.length / this.pageSize);
     },
     startIndex() {
       return (this.currentPage - 1) * this.pageSize;
     },
     paginatedData() {
-      return this.excelData.slice(this.startIndex, this.startIndex + this.pageSize);
+      return this.filteredData.slice(this.startIndex, this.startIndex + this.pageSize);
     },
     displayedPages() {
       const range = 2; // Cuántas páginas mostrar alrededor de la actual
@@ -171,6 +289,20 @@ export default {
       }
 
       return pages;
+    }
+  },
+  watch: {
+    searchText() {
+      this.currentPage = 1;
+    },
+    priceFilter() {
+      this.currentPage = 1;
+    },
+    brandFilter() {
+      this.currentPage = 1;
+    },
+    categoryFilter() {
+      this.currentPage = 1;
     }
   },
   methods: {
@@ -255,6 +387,13 @@ export default {
         this.inputPage = this.currentPage;
       }
     },
+    clearFilters() {
+      this.searchText = '';
+      this.priceFilter = '';
+      this.brandFilter = '';
+      this.categoryFilter = '';
+      this.currentPage = 1;
+    }
   }
 };
 </script>
