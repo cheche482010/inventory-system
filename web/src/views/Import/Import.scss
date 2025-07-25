@@ -1,0 +1,58 @@
+@use '@/assets/styles/main.scss' as *;
+
+.import-container {
+    padding: 20px;
+}
+
+.table-container {
+    max-height: 500px;
+    overflow-y: auto;
+    margin-top: 20px;
+    border: 1px solid #ccc;
+}
+
+.preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.preview-table th,
+.preview-table td {
+    padding: 8px;
+    border: 1px solid #ddd;
+    text-align: left;
+    word-wrap: break-word;
+}
+
+.pagination {
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.page-link {
+    min-width: 40px;
+    text-align: center;
+}
+
+.page-item.disabled .page-link {
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.page-item.active .page-link {
+    font-weight: bold;
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.input-group {
+    height: 38px;
+}
+
+.input-group input {
+    text-align: center;
+}
