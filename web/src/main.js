@@ -38,7 +38,8 @@ import {
   faDownload ,
   faShieldAlt,
   faUpload,
-  faInfoCircle
+  faInfoCircle,
+  faFileImport
 } from "@fortawesome/free-solid-svg-icons"
 
 library.add(
@@ -69,7 +70,8 @@ library.add(
   faDownload,
   faShieldAlt,
   faUpload,
-  faInfoCircle 
+  faInfoCircle,
+  faFileImport 
 )
 
 import App from "./App.vue"
