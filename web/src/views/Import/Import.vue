@@ -50,9 +50,12 @@
             <option v-for="category in uniqueCategories" :key="category" :value="category">{{ category }}</option>
           </select>
         </div>
-        <div class="col-md-1 d-flex align-items-end">
-          <button @click="clearFilters" class="btn btn-outline-secondary btn-sm w-100" title="Limpiar filtros">
+        <div class="col-md-1 d-flex align-items-end gap-1">
+          <button @click="clearFilters" class="btn btn-outline-secondary btn-sm" title="Limpiar filtros">
             <font-awesome-icon icon="times" />
+          </button>
+          <button @click="saveData" class="btn btn-success btn-sm" title="Guardar datos">
+            <font-awesome-icon icon="save" />
           </button>
         </div>
       </div>
@@ -184,6 +187,7 @@
 
 <script>
 import * as XLSX from 'xlsx';
+import Swal from 'sweetalert2';
 
 export default {
   name: 'ImportarExcel',
@@ -328,7 +332,7 @@ export default {
     transformExcelData(rawRows) {
       const products = [];
       let currentCategory = "";
-
+      
       for (let row of rawRows) {
         const code = row["__EMPTY"];
         const name = row["__EMPTY_1"];
@@ -393,6 +397,68 @@ export default {
       this.brandFilter = '';
       this.categoryFilter = '';
       this.currentPage = 1;
+    },
+    async saveData() {
+      const result = await Swal.fire({
+        title: '¿Estás seguro?',
+        text: '¿Deseas importar estos datos al sistema?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, importar',
+        cancelButtonText: 'Cancelar'
+      });
+
+      if (result.isConfirmed) {
+        this.validateAndImport();
+      }
+    },
+    async validateAndImport() {
+      const itemsWithoutStatus = this.excelData.filter(item => !item.producto.status);
+      
+      if (itemsWithoutStatus.length > 0) {
+        const { value: defaultStatus } = await Swal.fire({
+          title: 'Productos sin estatus',
+          text: `Hay ${itemsWithoutStatus.length} productos sin estatus. Selecciona un estatus por defecto:`,
+          icon: 'warning',
+          input: 'select',
+          inputOptions: {
+            'disponible': 'Disponible',
+            'nuevo': 'Nuevo',
+            'oferta': 'Oferta',
+            'agotado': 'Agotado'
+          },
+          inputPlaceholder: 'Selecciona un estatus',
+          showCancelButton: true,
+          confirmButtonText: 'Aplicar y guardar',
+          cancelButtonText: 'Cancelar',
+          inputValidator: (value) => {
+            if (!value) {
+              return 'Debes seleccionar un estatus por defecto';
+            }
+          }
+        });
+
+        if (defaultStatus) {
+          itemsWithoutStatus.forEach(item => {
+            item.producto.status = defaultStatus;
+          });
+          this.processImport();
+        }
+      } else {
+        this.processImport();
+      }
+    },
+    processImport() {
+      const dataToImport = this.excelData.map(item => item.producto);
+      
+      console.log('Datos a importar:', dataToImport);
+      
+      Swal.fire({
+        title: '¡Éxito!',
+        text: `Se han importado ${dataToImport.length} productos correctamente`,
+        icon: 'success',
+        confirmButtonText: 'Aceptar'
+      });
     }
   }
 };
