@@ -8,6 +8,7 @@ const categoryRoutes = require("./categories")
 const userRoutes = require("./users")
 const activityRoutes = require("./activities")
 const permissionRoutes = require("./permissions")
+const importRoutes = require("./import")
 
 router.use("/auth", authRoutes)
 router.use("/products", productRoutes)
@@ -16,5 +17,6 @@ router.use("/categories", categoryRoutes)
 router.use("/users", userRoutes)
 router.use("/activities", activityRoutes)
 router.use("/permissions", permissionRoutes)
+router.use("/import", importRoutes)
 
 module.exports = router

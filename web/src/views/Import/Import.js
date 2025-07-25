@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import Swal from 'sweetalert2';
+import { importService } from '@/services/importService';
 
 export default {
     name: 'ImportarExcel',
@@ -257,17 +258,37 @@ export default {
                 this.processImport();
             }
         },
-        processImport() {
-            const dataToImport = this.excelData.map(item => item.producto);
+        async processImport() {
+            const dataToImport = this.excelData.map(item => ({
+                code: item.producto.code,
+                name: item.producto.name,
+                description: item.producto.descripcion,
+                price: item.producto.price,
+                status: item.producto.status,
+                brand: item.producto.marca.name,
+                category: item.producto.categories.name,
+            }));
 
-            console.log('Datos a importar:', dataToImport);
+            try {
+                const response = await importService.importData(dataToImport);
+                Swal.fire({
+                    title: '¡Éxito!',
+                    text: response.data.message,
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar'
+                });
+            } catch (error) {
+                const errorMessage = error.response?.data?.message || 'Ocurrió un error desconocido';
+                const errorDetails = error.response?.data?.errors ?
+                    `<br><pre>${JSON.stringify(error.response.data.errors, null, 2)}</pre>` : '';
 
-            Swal.fire({
-                title: '¡Éxito!',
-                text: `Se han importado ${dataToImport.length} productos correctamente`,
-                icon: 'success',
-                confirmButtonText: 'Aceptar'
-            });
+                Swal.fire({
+                    title: 'Error al importar',
+                    html: errorMessage + errorDetails,
+                    icon: 'error',
+                    confirmButtonText: 'Aceptar'
+                });
+            }
         }
     }
 };
