@@ -93,7 +93,7 @@
 
           <!-- PAGINACIÓN -->
           <nav v-if="showPagination">
-            <ul class="pagination justify-content-center">
+            <ul class="pagination justify-content-center  mt-3">
               <li class="page-item" :class="{ disabled: pagination.currentPage === 1 }">
                 <button class="page-link" @click="changePage(pagination.currentPage - 1)">
                   Anterior
