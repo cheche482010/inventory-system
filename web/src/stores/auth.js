@@ -24,7 +24,7 @@ export const useAuthStore = defineStore("auth", {
     canViewActivities: (state) => ["admin", "dev"].includes(state.user?.role),
     canViewPermissions: (state) => state.user?.role === "dev",
     canViewDashboard: (state) => ["admin", "dev"].includes(state.user?.role),
-    canImport: (state) => ["admin", "dev"].includes(state.user?.role),
+    canImport: (state) => ["dev"].includes(state.user?.role),
     canExport: (state) => ["admin", "dev"].includes(state.user?.role),
     
     // Ruta inicial basada en rol

@@ -17,6 +17,7 @@ const routes = [
         path: "",
         name: "Dashboard",
         component: () => import("@/views/Dashboard/Dashboard.vue"),
+        meta: { requiresRole: ["admin", "dev"] },
       },
       {
         path: "/products",
@@ -27,11 +28,13 @@ const routes = [
         path: "/brands",
         name: "Brands",
         component: () => import("@/views/Brands/Brands.vue"),
+        meta: { requiresRole: ["admin", "dev"] },
       },
       {
         path: "/categories",
         name: "Categories",
         component: () => import("@/views/Categories/Categories.vue"),
+        meta: { requiresRole: ["admin", "dev"] },
       },
       {
         path: "/users",
@@ -55,7 +58,7 @@ const routes = [
         path: "/import",
         name: "Import",
         component: () => import("@/views/Import/Import.vue"),
-        meta: { requiresRole: ["admin", "dev"] },
+        meta: { requiresRole: ["dev"] },
       },
     ],
   },
@@ -88,6 +91,8 @@ router.beforeEach(async (to, from, next) => {
     next("/login")
   } else if (to.meta.requiresGuest && authStore.isAuthenticated) {
     next(authStore.initialRoute)
+  } else if (to.path === "/" && authStore.user?.role === "user") {
+    next("/products")
   } else if (to.meta.requiresRole && !to.meta.requiresRole.includes(authStore.user?.role)) {
     next("/403")
   } else {
