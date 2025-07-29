@@ -2,7 +2,7 @@
   <div class="login-container">
     <div class="login-card">
       <div class="text-center mb-4">
-        <h2 class="mb-3">Sistema de Inventario</h2>
+        <h2 class="mb-3">Global Diesel</h2>
         <p class="text-muted">Ingresa tus credenciales para continuar</p>
       </div>
 

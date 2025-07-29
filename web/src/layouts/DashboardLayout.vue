@@ -6,8 +6,12 @@
     <!-- Sidebar -->
     <div class="sidebar" :class="{ 'open': isSidebarOpen, 'minimized': !isSidebarOpen && !isMobile }">
       <nav class="p-3 d-flex flex-column h-100">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <h5 class="text-white" v-if="isSidebarOpen">Inventario</h5>
+        <!-- Logo de la empresa -->
+        <div class="text-center mb-3">
+          <img src="@/assets/images/logo.png" alt="Logo" class="logo" :class="{ 'logo-minimized': !isSidebarOpen }" />
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center">
           <button class="btn d-md-none text-white close-btn" @click="toggleSidebar">
             <font-awesome-icon icon="times" />
           </button>
@@ -69,14 +73,13 @@
               <span v-if="isSidebarOpen">Importar Datos</span>
             </router-link>
           </li>
+          <li class="nav-item mb-2" v-if="canImport">
+            <button @click="logout" class="btn btn-outline-light" :class="{ 'btn-sm w-100': isSidebarOpen }">
+              <font-awesome-icon icon="sign-out-alt" :class="{ 'me-2': isSidebarOpen }" />
+              <span v-if="isSidebarOpen">Cerrar Sesión</span>
+            </button>
+          </li>
         </ul>
-
-        <div class="mt-auto pt-3">
-          <button @click="logout" class="btn btn-outline-light" :class="{ 'btn-sm w-100': isSidebarOpen }">
-            <font-awesome-icon icon="sign-out-alt" :class="{ 'me-2': isSidebarOpen }" />
-            <span v-if="isSidebarOpen">Cerrar Sesión</span>
-          </button>
-        </div>
       </nav>
     </div>
 
