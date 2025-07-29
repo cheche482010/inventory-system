@@ -7,10 +7,10 @@
           <font-awesome-icon icon="plus" class="me-2" />
           Nuevo Usuario
         </button>
-        <button @click="clearFilters" class="btn btn-outline-secondary">
+        <!-- <button @click="clearFilters" class="btn btn-outline-secondary">
           <font-awesome-icon icon="eraser" class="me-2" />
           Limpiar Filtros
-        </button>
+        </button> -->
       </div>
     </div>
 
@@ -47,6 +47,13 @@
               <option value="true">Activo</option>
               <option value="false">Inactivo</option>
             </select>
+          </div>
+
+          <div class="col-md-3">
+            <button @click="clearFilters" class="btn btn-outline-secondary">
+              <font-awesome-icon icon="eraser" class="me-2" />
+              Limpiar Filtros
+            </button>
           </div>
         </div>
       </div>

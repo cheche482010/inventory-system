@@ -7,11 +7,6 @@
           <font-awesome-icon icon="plus" class="me-2" />
           Nuevo Producto
         </button>
-        <ExportDropdown v-if="canExport" :products="products" :filters="filters" />
-        <button @click="clearFilters" class="btn btn-outline-secondary">
-          <font-awesome-icon icon="eraser" class="me-2" />
-          Limpiar Filtros
-        </button>
       </div>
     </div>
 
@@ -60,6 +55,17 @@
                 {{ category.name }}
               </option>
             </select>
+          </div>
+        </div>
+        <div class="row mt-3">
+          <div class="col-6 col-md-2">
+            <button @click="clearFilters" class="btn btn-outline-secondary">
+              <font-awesome-icon icon="eraser" class="me-2" />
+              Limpiar
+            </button>
+          </div>
+          <div class="col-6 col-md-2 ms-md-auto">
+            <ExportDropdown v-if="canExport" :products="products" :filters="filters" />
           </div>
         </div>
       </div>

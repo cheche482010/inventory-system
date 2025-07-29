@@ -2,20 +2,28 @@
   <div class="activities">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h1>Bitácora de Actividades</h1>
-      <div class="d-flex gap-2">
-        <select class="form-select" v-model="filters.action" @change="applyFilters">
-          <option value="">Todas las acciones</option>
-          <option value="CREATE">Crear</option>
-          <option value="UPDATE">Actualizar</option>
-          <option value="DELETE">Eliminar</option>
-        </select>
-        <select class="form-select" v-model="filters.resource" @change="applyFilters">
-          <option value="">Todos los recursos</option>
-          <option value="PRODUCT">Productos</option>
-          <option value="BRAND">Marcas</option>
-          <option value="CATEGORY">Categorías</option>
-          <option value="USER">Usuarios</option>
-        </select>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="d-flex gap-2">
+            <select class="form-select" v-model="filters.action" @change="applyFilters">
+              <option value="">Todas las acciones</option>
+              <option value="CREATE">Crear</option>
+              <option value="UPDATE">Actualizar</option>
+              <option value="DELETE">Eliminar</option>
+            </select>
+            <select class="form-select" v-model="filters.resource" @change="applyFilters">
+              <option value="">Todos los recursos</option>
+              <option value="PRODUCT">Productos</option>
+              <option value="BRAND">Marcas</option>
+              <option value="CATEGORY">Categorías</option>
+              <option value="USER">Usuarios</option>
+            </select>
+          </div>
+        </div>
       </div>
     </div>
 
