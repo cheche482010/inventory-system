@@ -1,8 +1,8 @@
 import api from "./api"
 
 export const categoryService = {
-  getAll() {
-    return api.get("/categories")
+  getAll(config = {}) {
+    return api.get("/categories", config)
   },
 
   create(data) {
