@@ -1,7 +1,7 @@
 const express = require("express")
 const { body, param } = require("express-validator")
 const { Category, Product } = require("../models")
-const { authenticateToken, authorize } = require("../middleware/auth")
+const { authenticateToken, authorize, checkPermission } = require("../middleware/auth")
 const { logActivity } = require("../middleware/activityLogger")
 const { successResponse, errorResponse, paginatedResponse } = require("../helpers/responseHelper")
 const { handleValidationErrors } = require("../helpers/validationHelper")
@@ -246,7 +246,7 @@ router.get(
  */
 router.post(
   "/",
-  [authenticateToken, authorize("admin", "dev"), body("name").notEmpty().withMessage("Nombre requerido")],
+  [authenticateToken, checkPermission("categories", "create"), body("name").notEmpty().withMessage("Nombre requerido")],
   handleValidationErrors,
   logActivity("CREATE", "CATEGORY"),
   async (req, res) => {
@@ -303,7 +303,7 @@ router.put(
   "/:id",
   [
     authenticateToken,
-    authorize("admin", "dev"),
+    checkPermission("categories", "update"),
     param("id").isInt().withMessage("ID debe ser un número"),
     body("name").notEmpty().withMessage("Nombre requerido"),
   ],
@@ -355,7 +355,7 @@ router.put(
  */
 router.delete(
   "/:id",
-  [authenticateToken, authorize("dev"), param("id").isInt().withMessage("ID debe ser un número")],
+  [authenticateToken, checkPermission("categories", "delete"), param("id").isInt().withMessage("ID debe ser un número")],
   handleValidationErrors,
   logActivity("DELETE", "CATEGORY"),
   async (req, res) => {

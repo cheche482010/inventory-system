@@ -1,7 +1,7 @@
 const express = require("express")
 const { body, query } = require("express-validator")
 const { Product, Brand, Category } = require("../models")
-const { authenticateToken, authorize } = require("../middleware/auth")
+const { authenticateToken, authorize, checkPermission } = require("../middleware/auth")
 const { logActivity } = require("../middleware/activityLogger")
 const { successResponse, errorResponse, paginatedResponse } = require("../helpers/responseHelper")
 const { handleValidationErrors } = require("../helpers/validationHelper")
@@ -165,7 +165,7 @@ router.post(
   "/",
   [
     authenticateToken,
-    authorize("admin", "dev"),
+    checkPermission("products", "create"),
     body("code").notEmpty().withMessage("Código requerido"),
     body("name").notEmpty().withMessage("Nombre requerido"),
     body("price").isFloat({ min: 0 }).withMessage("Precio debe ser mayor a 0"),
@@ -217,11 +217,13 @@ router.put(
   "/:id",
   [
     authenticateToken,
-    authorize("admin", "dev"),
+    checkPermission("products", "update"),
     body("code").optional().notEmpty().withMessage("Código no puede estar vacío"),
     body("name").optional().notEmpty().withMessage("Nombre no puede estar vacío"),
     body("price").optional().isFloat({ min: 0 }).withMessage("Precio debe ser mayor a 0"),
     body("status").optional().isIn(["disponible", "nuevo", "oferta", "agotado"]).withMessage("Estado inválido"),
+    body("brandId").optional().isInt().withMessage("Marca requerida"),
+    body("categoryId").optional().isInt().withMessage("Categoría requerida"),
   ],
   handleValidationErrors,
   logActivity("UPDATE", "PRODUCT"),
@@ -269,7 +271,7 @@ router.put(
  *       200:
  *         description: Producto eliminado
  */
-router.delete("/:id", [authenticateToken, authorize("dev")], logActivity("DELETE", "PRODUCT"), async (req, res) => {
+router.delete("/:id", [authenticateToken, checkPermission("products", "delete")], logActivity("DELETE", "PRODUCT"), async (req, res) => {
   try {
     const product = await Product.findOne({
       where: { id: req.params.id, isActive: true },
