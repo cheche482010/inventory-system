@@ -1,9 +1,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { userService } from '@/services/userService'
 import { useToast } from 'vue-toastification'
+import UserPermissions from '../UserPermissions/UserPermissions.vue'
 
 export default {
     name: 'UserModal',
+    components: {
+        UserPermissions
+    },
     props: {
         user: {
             type: Object,
@@ -24,7 +28,9 @@ export default {
             role: ''
         })
 
-        const isEdit = computed(() => !!props.user)
+        const createdUser = ref(null)
+        const isEdit = computed(() => !!props.user || !!createdUser.value)
+        const userForPermissions = computed(() => createdUser.value || props.user)
 
         const validateForm = () => {
             errors.value = {}
@@ -66,14 +72,15 @@ export default {
                     delete data.password
                 }
 
-                if (isEdit.value) {
+                if (isEdit.value && !createdUser.value) {
                     await userService.update(props.user.id, data)
                     toast.success('Usuario actualizado exitosamente')
+                    emit('saved')
                 } else {
-                    await userService.create(data)
-                    toast.success('Usuario creado exitosamente')
+                    const response = await userService.create(data)
+                    createdUser.value = response.data
+                    toast.success('Usuario creado exitosamente. Ahora puedes asignar permisos.')
                 }
-                emit('saved')
             } catch (error) {
                 toast.error(error.response?.data?.message || 'Error al guardar usuario')
             } finally {
@@ -98,7 +105,8 @@ export default {
             loading,
             errors,
             isEdit,
-            handleSubmit
+            handleSubmit,
+            userForPermissions
         }
     }
 }

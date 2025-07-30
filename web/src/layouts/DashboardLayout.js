@@ -19,12 +19,12 @@ export default {
         const mediaQuery = ref(null)
 
         const user = computed(() => authStore.user)
-        const canCreate = computed(() => authStore.canCreate)
-        const canViewUsers = computed(() => authStore.canViewUsers)
-        const canViewActivities = computed(() => authStore.canViewActivities)
-        const canViewPermissions = computed(() => authStore.canViewPermissions)
-        const canViewDashboard = computed(() => authStore.canViewDashboard)
-        const canImport = computed(() => authStore.canImport)
+        const canCreate = computed(() => authStore.hasPermission('products:create') || authStore.hasPermission('brands:create') || authStore.hasPermission('categories:create'))
+        const canViewUsers = computed(() => authStore.hasPermission('users:read') || authStore.user?.role === 'dev')
+        const canViewActivities = computed(() => authStore.hasPermission('activities:read') || authStore.user?.role === 'dev')
+        const canViewPermissions = computed(() => authStore.hasPermission('permissions:read') || authStore.user?.role === 'dev')
+        const canViewDashboard = computed(() => authStore.hasPermission('dashboard:read'))
+        const canImport = computed(() => authStore.hasPermission('import:create'))
 
         const getRoleBadgeColor = (role) => {
             const colors = {

@@ -108,7 +108,7 @@
                       <button class="btn btn-outline-info" @click="viewUser(user)" title="Ver">
                         <font-awesome-icon icon="eye" />
                       </button>
-                      <button v-if="canCreate && user.id !== currentUser?.id" class="btn btn-outline-warning"
+                      <button v-if="canUpdate && user.id !== currentUser?.id" class="btn btn-outline-warning"
                         @click="editUser(user)" title="Editar">
                         <font-awesome-icon icon="edit" />
                       </button>

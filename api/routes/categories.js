@@ -141,6 +141,27 @@ router.get("/", authenticateToken, async (req, res) => {
 
 /**
  * @swagger
+ * /categories/all:
+ *   get:
+ *     summary: Obtener todas las categorías (sin paginación)
+ *     tags: [Categories]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de todas las categorías
+ */
+router.get("/all", authenticateToken, async (req, res) => {
+  try {
+    const categories = await Category.findAll({ where: { isActive: true }, order: [["name", "ASC"]] })
+    successResponse(res, categories)
+  } catch (error) {
+    errorResponse(res, "Error al obtener todas las categorías")
+  }
+})
+
+/**
+ * @swagger
  * /categories/{id}:
  *   get:
  *     summary: Obtener categoría por ID

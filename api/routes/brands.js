@@ -137,6 +137,27 @@ router.get("/", authenticateToken, async (req, res) => {
 
 /**
  * @swagger
+ * /brands/all:
+ *   get:
+ *     summary: Obtener todas las marcas (sin paginación)
+ *     tags: [Brands]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de todas las marcas
+ */
+router.get("/all", authenticateToken, async (req, res) => {
+  try {
+    const brands = await Brand.findAll({ where: { isActive: true }, order: [["name", "ASC"]] })
+    successResponse(res, brands)
+  } catch (error) {
+    errorResponse(res, "Error al obtener todas las marcas")
+  }
+})
+
+/**
+ * @swagger
  * /brands/{id}:
  *   get:
  *     summary: Obtener marca por ID

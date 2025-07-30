@@ -5,6 +5,10 @@ export const categoryService = {
     return api.get("/categories", config)
   },
 
+  getAllCategories() {
+    return api.get("/categories/all")
+  },
+
   create(data) {
     return api.post("/categories", data)
   },

@@ -37,7 +37,8 @@ export default {
             limit: 10
         })
 
-        const canCreate = computed(() => authStore.canCreate)
+        const canCreate = computed(() => authStore.hasPermission('users:create'))
+        const canUpdate = computed(() => authStore.hasPermission('users:update'))
         const currentUser = computed(() => authStore.user)
         const hasNoResults = computed(() => !loading.value && users.value.length === 0)
         const showPagination = computed(() => pagination.value.totalPages > 1)
@@ -190,6 +191,7 @@ export default {
             filters,
             pagination,
             canCreate,
+            canUpdate,
             currentUser,
             hasNoResults,
             showPagination,

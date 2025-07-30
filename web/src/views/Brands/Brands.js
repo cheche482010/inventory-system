@@ -1,4 +1,5 @@
 import { ref, computed, onMounted } from 'vue'
+import Swal from 'sweetalert2'
 import { useAuthStore } from '@/stores/auth'
 import { brandService } from '@/services/brandService'
 import { useToast } from 'vue-toastification'
@@ -31,8 +32,8 @@ export default {
       itemsPerPage: 10
     })
 
-    const canCreate = computed(() => authStore.canCreate)
-    const canDelete = computed(() => authStore.canDelete)
+    const canCreate = computed(() => authStore.hasPermission('brands:create'))
+    const canDelete = computed(() => authStore.hasPermission('brands:delete'))
 
     const loadBrands = async () => {
       loading.value = true
@@ -112,15 +113,26 @@ export default {
     }
 
     const confirmDelete = async (brand) => {
-      if (confirm(`¿Estás seguro de eliminar la marca "${brand.name}"?`)) {
-        try {
-          await brandService.delete(brand.id)
-          toast.success('Marca eliminada exitosamente')
-          loadBrands()
-        } catch (error) {
-          toast.error('Error al eliminar marca')
+      Swal.fire({
+        title: `¿Estás seguro de eliminar la marca "${brand.name}"?`,
+        text: "No podrás revertir esta acción.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          try {
+            await brandService.delete(brand.id)
+            toast.success('Marca eliminada exitosamente')
+            loadBrands()
+          } catch (error) {
+            toast.error('Error al eliminar marca')
+          }
         }
-      }
+      });
     }
 
     const closeModal = () => {

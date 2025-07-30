@@ -1,4 +1,5 @@
 import { ref, computed, onMounted } from 'vue'
+import Swal from 'sweetalert2'
 import { useAuthStore } from '@/stores/auth'
 import { useProductStore } from '@/stores/products'
 import { categoryService } from '@/services/categoryService'
@@ -32,8 +33,8 @@ export default {
             itemsPerPage: 10
         })
 
-        const canCreate = computed(() => authStore.canCreate)
-        const canDelete = computed(() => authStore.canDelete)
+        const canCreate = computed(() => authStore.hasPermission('categories:create'))
+        const canDelete = computed(() => authStore.hasPermission('categories:delete'))
 
         const loadCategories = async () => {
             loading.value = true
@@ -124,15 +125,26 @@ export default {
         }
 
         const confirmDelete = async (category) => {
-            if (confirm(`¿Estás seguro de eliminar la categoría "${category.name}"?`)) {
-                try {
-                    await categoryService.delete(category.id)
-                    toast.success('Categoría eliminada exitosamente')
-                    loadCategories()
-                } catch (error) {
-                    toast.error('Error al eliminar categoría')
+            Swal.fire({
+                title: `¿Estás seguro de eliminar la categoría "${category.name}"?`,
+                text: "No podrás revertir esta acción.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        await categoryService.delete(category.id)
+                        toast.success('Categoría eliminada exitosamente')
+                        loadCategories()
+                    } catch (error) {
+                        toast.error('Error al eliminar categoría')
+                    }
                 }
-            }
+            });
         }
 
         const closeModal = () => {

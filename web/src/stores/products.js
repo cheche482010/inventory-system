@@ -1,117 +1,52 @@
-"use client"
+import { defineStore } from 'pinia';
+import { productService } from '@/services/productService';
+import { useToast } from 'vue-toastification';
 
-import { defineStore } from "pinia"
-import { productService } from "@/services/productService"
-import { useToast } from "vue-toastification"
-
-const toast = useToast()
-
-export const useProductStore = defineStore("products", {
+export const useProductStore = defineStore('products', {
   state: () => ({
     products: [],
-    currentProduct: null,
-    loading: false,
-    pagination: {
-      currentPage: 1,
-      totalPages: 1,
-      totalItems: 0,
-      itemsPerPage: 10,
-    },
+    pagination: {},
     filters: {
-      search: "",
-      status: "",
-      brandId: "",
-      categoryId: "",
-      perPage: "10",
+      search: '',
+      status: '',
+      brandId: '',
+      categoryId: '',
+      perPage: '10',
     },
+    loading: false,
+    toast: useToast(),
   }),
-
+  getters: {
+    hasNoResults: (state) => state.products.length === 0 && !state.loading,
+    showPagination: (state) => state.filters.perPage !== 'all' && state.pagination.totalPages > 1,
+  },
   actions: {
-    async fetchProducts(params = {}) {
-      this.loading = true
+    async fetchProducts() {
+      this.loading = true;
       try {
-        const limit = this.filters.perPage === 'all' ? undefined : parseInt(this.filters.perPage)
-        const response = await productService.getAll({
-          ...this.filters,
-          page: this.pagination.currentPage,
-          limit,
-          ...params,
-        })
-        this.products = response.data.sort((a, b) => {
-          if (a.status === 'oferta' && b.status !== 'oferta') return -1
-          if (a.status !== 'oferta' && b.status === 'oferta') return 1
-          return 0
-        })
-        this.pagination = response.pagination
+        const response = await productService.getAll(this.filters);
+        this.products = response.data;
+        this.pagination = response.pagination;
       } catch (error) {
-        toast.error("Error al cargar productos")
+        this.toast.error('Error al obtener productos');
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
-
-    async fetchProduct(id) {
-      this.loading = true
-      try {
-        const response = await productService.getById(id)
-        this.currentProduct = response.data
-        return response.data
-      } catch (error) {
-        toast.error("Error al cargar producto")
-        throw error
-      } finally {
-        this.loading = false
-      }
+    setFilters(newFilters) {
+      this.filters = { ...this.filters, ...newFilters };
     },
-
-    async createProduct(productData) {
-      this.loading = true
-      try {
-        const response = await productService.create(productData)
-        toast.success("Producto creado exitosamente")
-        await this.fetchProducts()
-        return response.data
-      } catch (error) {
-        toast.error(error.response?.data?.message || "Error al crear producto")
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async updateProduct(id, productData) {
-      this.loading = true
-      try {
-        const response = await productService.update(id, productData)
-        toast.success("Producto actualizado exitosamente")
-        await this.fetchProducts()
-        return response.data
-      } catch (error) {
-        toast.error(error.response?.data?.message || "Error al actualizar producto")
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async deleteProduct(id) {
-      try {
-        await productService.delete(id)
-        toast.success("Producto eliminado exitosamente")
-        await this.fetchProducts()
-      } catch (error) {
-        toast.error("Error al eliminar producto")
-        throw error
-      }
-    },
-
-    setFilters(filters) {
-      this.filters = { ...this.filters, ...filters }
-      this.pagination.currentPage = 1
-    },
-
     setPage(page) {
-      this.pagination.currentPage = page
+      this.filters.page = page;
+    },
+    async deleteProduct(productId) {
+      try {
+        await productService.delete(productId);
+        this.toast.success('Producto eliminado exitosamente');
+        this.fetchProducts();
+      } catch (error) {
+        this.toast.error('Error al eliminar producto');
+      }
     },
   },
-})
+});

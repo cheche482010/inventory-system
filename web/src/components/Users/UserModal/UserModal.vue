@@ -82,6 +82,10 @@
             </button>
           </div>
         </form>
+        <div v-if="isEdit" class="modal-body">
+          <hr>
+          <UserPermissions :user-id="userForPermissions.id" />
+        </div>
       </div>
     </div>
   </div>

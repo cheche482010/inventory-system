@@ -5,6 +5,10 @@ export const brandService = {
     return api.get("/brands", config)
   },
 
+  getAllBrands() {
+    return api.get("/brands/all")
+  },
+
   create(data) {
     return api.post("/brands", data)
   },
