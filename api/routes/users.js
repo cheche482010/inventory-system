@@ -100,6 +100,103 @@ const router = express.Router()
 
 /**
  * @swagger
+ * /users/search:
+ *   get:
+ *     summary: Buscar usuarios con filtros
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Número de página
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Elementos por página
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Buscar por nombre o email
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *           enum: [user, admin, dev]
+ *         description: Filtrar por rol
+ *       - in: query
+ *         name: isActive
+ *         schema:
+ *           type: boolean
+ *         description: Filtrar por estado activo
+ *     responses:
+ *       200:
+ *         description: Lista de usuarios filtrada exitosamente
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/User'
+ *                 pagination:
+ *                   $ref: '#/components/schemas/Pagination'
+ */
+router.get("/search", [authenticateToken, authorize("admin", "dev")], async (req, res) => {
+  try {
+    const page = Number.parseInt(req.query.page) || 1
+    const limit = Number.parseInt(req.query.limit) || 10
+    const offset = (page - 1) * limit
+    const { search, role, isActive } = req.query
+
+    const where = {}
+
+    if (search) {
+      where[Op.or] = [
+        { firstName: { [Op.like]: `%${search}%` } },
+        { lastName: { [Op.like]: `%${search}%` } },
+        { email: { [Op.like]: `%${search}%` } },
+      ]
+    }
+
+    if (role) where.role = role
+    if (isActive !== undefined) where.isActive = isActive === "true"
+
+    const { count, rows } = await User.findAndCountAll({
+      where,
+      attributes: { exclude: ["password"] },
+      limit,
+      offset,
+      order: [["createdAt", "DESC"]],
+    })
+
+    const pagination = {
+      currentPage: page,
+      totalPages: Math.ceil(count / limit),
+      totalItems: count,
+      itemsPerPage: limit,
+    }
+
+    paginatedResponse(res, rows, pagination)
+  } catch (error) {
+    errorResponse(res, "Error al buscar usuarios")
+  }
+})
+
+/**
+ * @swagger
  * /users:
  *   get:
  *     summary: Obtener todos los usuarios

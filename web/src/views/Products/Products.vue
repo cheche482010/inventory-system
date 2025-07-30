@@ -2,29 +2,31 @@
   <div class="products">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h1>Productos</h1>
-      <router-link 
-        v-if="canCreate" 
-        to="/products/create" 
-        class="btn btn-primary"
-      >
-        <font-awesome-icon icon="plus" class="me-2" />
-        Nuevo Producto
-      </router-link>
+      <div class="btn-group">
+        <button v-if="canCreate" @click="createProduct" class="btn btn-primary">
+          <font-awesome-icon icon="plus" class="me-2" />
+          Nuevo Producto
+        </button>
+      </div>
     </div>
 
     <!-- Filters -->
     <div class="card mb-4">
       <div class="card-body">
         <div class="row g-3">
-          <div class="col-md-4">
+          <div class="col-md-3">
             <label class="form-label">Buscar</label>
-            <input
-              type="text"
-              class="form-control"
-              placeholder="Código o nombre..."
-              v-model="filters.search"
-              @input="debouncedSearch"
-            />
+            <input type="text" class="form-control" placeholder="Código o nombre..." v-model="filters.search"
+              @input="debouncedSearch" />
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Mostrar</label>
+            <select class="form-select" v-model="filters.perPage" @change="applyFilters">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="all">Todas</option>
+            </select>
           </div>
           <div class="col-md-2">
             <label class="form-label">Estado</label>
@@ -36,7 +38,7 @@
               <option value="agotado">Agotado</option>
             </select>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-2">
             <label class="form-label">Marca</label>
             <select class="form-select" v-model="filters.brandId" @change="applyFilters">
               <option value="">Todas</option>
@@ -55,6 +57,17 @@
             </select>
           </div>
         </div>
+        <div class="row mt-3">
+          <div class="col-6 col-md-2">
+            <button @click="clearFilters" class="btn btn-outline-secondary">
+              <font-awesome-icon icon="eraser" class="me-2" />
+              Limpiar
+            </button>
+          </div>
+          <div class="col-6 col-md-2 ms-md-auto">
+            <ExportDropdown v-if="canExport" :products="products" :filters="filters" />
+          </div>
+        </div>
       </div>
     </div>
 
@@ -64,9 +77,10 @@
         <div v-if="loading" class="loading-spinner">
           <div class="spinner-border text-primary"></div>
         </div>
-        
+
         <div v-else>
-          <div class="table-responsive">
+          <div class="table-responsive"
+            :style="{ maxHeight: filters.perPage === 'all' ? '500px' : 'none', overflowY: filters.perPage === 'all' ? 'auto' : 'visible' }">
             <table class="table">
               <thead>
                 <tr>
@@ -80,7 +94,15 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="product in products" :key="product.id">
+                <tr v-if="hasNoResults">
+                  <td colspan="7" class="text-center py-4">
+                    <div class="alert alert-info">
+                      <font-awesome-icon icon="exclamation-triangle" class="me-2" />
+                      No se encontraron productos que coincidan con los filtros aplicados.
+                    </div>
+                  </td>
+                </tr>
+                <tr v-for="product in products" :key="product.id" v-else>
                   <td>{{ product.code }}</td>
                   <td>{{ product.name.substring(0, 60) }}...</td>
                   <td>{{ product.brand?.name }}</td>
@@ -93,27 +115,15 @@
                   <td>${{ product.price }}</td>
                   <td>
                     <div class="btn-group btn-group-sm">
-                      <button 
-                        class="btn btn-outline-info"
-                        @click="viewProduct(product)"
-                        title="Ver"
-                      >
+                      <button class="btn btn-outline-info" @click="viewProduct(product)" title="Ver">
                         <font-awesome-icon icon="eye" />
                       </button>
-                      <router-link 
-                        v-if="canCreate"
-                        :to="`/products/${product.id}/edit`"
-                        class="btn btn-outline-warning"
-                        title="Editar"
-                      >
+                      <button v-if="canCreate" @click="editProduct(product)" class="btn btn-outline-warning"
+                        title="Editar">
                         <font-awesome-icon icon="edit" />
-                      </router-link>
-                      <button 
-                        v-if="canDelete"
-                        class="btn btn-outline-danger"
-                        @click="confirmDelete(product)"
-                        title="Eliminar"
-                      >
+                      </button>
+                      <button v-if="canDelete" class="btn btn-outline-danger" @click="confirmDelete(product)"
+                        title="Eliminar">
                         <font-awesome-icon icon="trash" />
                       </button>
                     </div>
@@ -124,19 +134,15 @@
           </div>
 
           <!-- Pagination -->
-          <nav v-if="pagination.totalPages > 1">
-            <ul class="pagination justify-content-center">
+          <nav v-if="showPagination && pagination.totalPages > 1">
+            <ul class="pagination justify-content-center  mt-3">
               <li class="page-item" :class="{ disabled: pagination.currentPage === 1 }">
                 <button class="page-link" @click="changePage(pagination.currentPage - 1)">
                   Anterior
                 </button>
               </li>
-              <li 
-                v-for="page in visiblePages" 
-                :key="page"
-                class="page-item" 
-                :class="{ active: page === pagination.currentPage }"
-              >
+              <li v-for="page in visiblePages" :key="page" class="page-item"
+                :class="{ active: page === pagination.currentPage }">
                 <button class="page-link" @click="changePage(page)">
                   {{ page }}
                 </button>
@@ -153,135 +159,23 @@
     </div>
 
     <!-- Product View Modal -->
-    <ProductModal 
-      v-if="selectedProduct"
-      :product="selectedProduct"
-      @close="selectedProduct = null"
-    />
+    <ProductModal v-if="selectedProduct" :product="selectedProduct" @close="selectedProduct = null" />
+
+    <!-- Product Form Modal -->
+    <div v-if="showProductForm" class="modal show d-block" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">{{ editingProduct ? 'Editar Producto' : 'Nuevo Producto' }}</h5>
+            <button type="button" class="btn-close" @click="closeProductForm"></button>
+          </div>
+          <div class="modal-body">
+            <ProductForm :product="editingProduct" @success="handleFormSuccess" @cancel="closeProductForm" />
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
-<script>
-import { ref, computed, onMounted, watch } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { useProductStore } from '@/stores/products'
-import { brandService } from '@/services/brandService'
-import { categoryService } from '@/services/categoryService'
-import { useToast } from 'vue-toastification'
-import ProductModal from '@/components/Products/ProductModal.vue'
-
-let searchTimeout
-
-export default {
-  name: 'Products',
-  components: {
-    ProductModal
-  },
-  setup() {
-    const authStore = useAuthStore()
-    const productStore = useProductStore()
-    const toast = useToast()
-    
-    const brands = ref([])
-    const categories = ref([])
-    const selectedProduct = ref(null)
-    
-    const products = computed(() => productStore.products)
-    const loading = computed(() => productStore.loading)
-    const pagination = computed(() => productStore.pagination)
-    const filters = computed(() => productStore.filters)
-    
-    const canCreate = computed(() => authStore.canCreate)
-    const canDelete = computed(() => authStore.canDelete)
-
-    const visiblePages = computed(() => {
-      const current = pagination.value.currentPage
-      const total = pagination.value.totalPages
-      const pages = []
-      
-      for (let i = Math.max(1, current - 2); i <= Math.min(total, current + 2); i++) {
-        pages.push(i)
-      }
-      
-      return pages
-    })
-
-    const loadData = async () => {
-      await Promise.all([
-        productStore.fetchProducts(),
-        loadBrands(),
-        loadCategories()
-      ])
-    }
-
-    const loadBrands = async () => {
-      try {
-        const response = await brandService.getAll()
-        brands.value = response.data
-      } catch (error) {
-        console.error('Error loading brands:', error)
-      }
-    }
-
-    const loadCategories = async () => {
-      try {
-        const response = await categoryService.getAll()
-        categories.value = response.data
-      } catch (error) {
-        console.error('Error loading categories:', error)
-      }
-    }
-
-    const applyFilters = () => {
-      productStore.setFilters(filters.value)
-      productStore.fetchProducts()
-    }
-
-    const debouncedSearch = () => {
-      clearTimeout(searchTimeout)
-      searchTimeout = setTimeout(() => {
-        applyFilters()
-      }, 500)
-    }
-
-    const changePage = (page) => {
-      if (page >= 1 && page <= pagination.value.totalPages) {
-        productStore.setPage(page)
-        productStore.fetchProducts()
-      }
-    }
-
-    const viewProduct = (product) => {
-      selectedProduct.value = product
-    }
-
-    const confirmDelete = (product) => {
-      if (confirm(`¿Estás seguro de eliminar el producto ${product.code}?`)) {
-        productStore.deleteProduct(product.id)
-      }
-    }
-
-    onMounted(() => {
-      loadData()
-    })
-
-    return {
-      products,
-      loading,
-      pagination,
-      filters,
-      brands,
-      categories,
-      selectedProduct,
-      canCreate,
-      canDelete,
-      visiblePages,
-      applyFilters,
-      debouncedSearch,
-      changePage,
-      viewProduct,
-      confirmDelete
-    }
-  }
-}
-</script>
+<script src="./Products.js"></script>

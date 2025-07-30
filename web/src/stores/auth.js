@@ -4,20 +4,43 @@ import { defineStore } from "pinia"
 import { authService } from "@/services/authService"
 import { useToast } from "vue-toastification"
 
-const toast = useToast()
-
 export const useAuthStore = defineStore("auth", {
   state: () => ({
     user: null,
     token: localStorage.getItem("token"),
     loading: false,
+    toast: useToast(),
   }),
 
   getters: {
     isAuthenticated: (state) => !!state.token,
     userRole: (state) => state.user?.role,
+
+    // Permisos basados en rol
     canCreate: (state) => ["admin", "dev"].includes(state.user?.role),
     canDelete: (state) => state.user?.role === "dev",
+    canExportPdf: (state) => state.user?.role === "admin",
+    canViewUsers: (state) => ["admin", "dev"].includes(state.user?.role),
+    canViewActivities: (state) => ["admin", "dev"].includes(state.user?.role),
+    canViewPermissions: (state) => state.user?.role === "dev",
+    canViewDashboard: (state) => ["admin", "dev"].includes(state.user?.role),
+    canImport: (state) => ["dev"].includes(state.user?.role),
+    canExport: (state) => ["admin", "dev"].includes(state.user?.role),
+    
+    // Ruta inicial basada en rol
+    initialRoute: (state) => {
+      if (!state.user) return "/login"
+
+      switch (state.user.role) {
+        case "user":
+          return "/products"
+        case "admin":
+        case "dev":
+          return "/"
+        default:
+          return "/products"
+      }
+    },
   },
 
   actions: {
@@ -28,10 +51,10 @@ export const useAuthStore = defineStore("auth", {
         this.token = response.data.token
         this.user = response.data.user
         localStorage.setItem("token", this.token)
-        toast.success("Inicio de sesión exitoso")
+        this.toast.success("Inicio de sesión exitoso")
         return response
       } catch (error) {
-        toast.error(error.response?.data?.message || "Error en el login")
+        this.toast.error(error.response?.data?.message || "Error en el login")
         throw error
       } finally {
         this.loading = false
@@ -53,7 +76,7 @@ export const useAuthStore = defineStore("auth", {
       this.user = null
       this.token = null
       localStorage.removeItem("token")
-      toast.info("Sesión cerrada")
+      this.toast.info("Sesión cerrada")
     },
   },
 })

@@ -22,6 +22,7 @@ export const useProductStore = defineStore("products", {
       status: "",
       brandId: "",
       categoryId: "",
+      perPage: "10",
     },
   }),
 
@@ -29,13 +30,18 @@ export const useProductStore = defineStore("products", {
     async fetchProducts(params = {}) {
       this.loading = true
       try {
+        const limit = this.filters.perPage === 'all' ? undefined : parseInt(this.filters.perPage)
         const response = await productService.getAll({
           ...this.filters,
           page: this.pagination.currentPage,
-          limit: this.pagination.itemsPerPage,
+          limit,
           ...params,
         })
-        this.products = response.data
+        this.products = response.data.sort((a, b) => {
+          if (a.status === 'oferta' && b.status !== 'oferta') return -1
+          if (a.status !== 'oferta' && b.status === 'oferta') return 1
+          return 0
+        })
         this.pagination = response.pagination
       } catch (error) {
         toast.error("Error al cargar productos")

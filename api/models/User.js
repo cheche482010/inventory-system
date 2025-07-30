@@ -61,8 +61,50 @@ module.exports = (sequelize, DataTypes) => {
     return bcrypt.compare(password, this.password)
   }
 
+  User.prototype.hasPermission = async function (resource, action) {
+    // Los dev tienen todos los permisos
+    if (this.role === "dev") return true
+
+    // Los admin tienen permisos específicos
+    if (this.role === "admin") {
+      const adminPermissions = [
+        "products:read",
+        "products:create",
+        "products:update",
+        "products:export",
+        "brands:read",
+        "brands:create",
+        "brands:update",
+        "categories:read",
+        "categories:create",
+        "categories:update",
+        "users:read",
+        "users:create",
+        "users:update",
+        "activities:read",
+        "dashboard:read",
+        "import:create", // Permiso futuro
+      ]
+      return adminPermissions.includes(`${resource}:${action}`)
+    }
+
+    // Los users solo pueden leer productos
+    if (this.role === "user") {
+      const userPermissions = ["products:read"]
+      return userPermissions.includes(`${resource}:${action}`)
+    }
+
+    return false
+  }
+
   User.associate = (models) => {
     User.hasMany(models.ActivityLog, { foreignKey: "userId", as: "activities" })
+    User.belongsToMany(models.Permission, {
+      through: "user_permissions",
+      foreignKey: "userId",
+      otherKey: "permissionId",
+      as: "permissions",
+    })
   }
 
   return User

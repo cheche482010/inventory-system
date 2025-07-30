@@ -6,8 +6,76 @@ Sistema de inventario completo para gestión de productos de tienda.
 
 ```
 inventory-system/
-├── api/          # Backend Node.js
-├── web/          # Frontend Vue.js
+├── api/                          # Backend Node.js
+│   ├── config/                   # Configuraciones
+│   │   ├── database.js           # Config base de datos
+│   │   └── swagger.js            # Config documentación API
+│   ├── helpers/                  # Funciones auxiliares
+│   │   ├── responseHelper.js     # Respuestas estandarizadas
+│   │   └── validationHelper.js   # Validaciones
+│   ├── middleware/               # Middlewares
+│   │   ├── activityLogger.js     # Log de actividades
+│   │   ├── auth.js               # Autenticación JWT
+│   │   └── errorHandler.js       # Manejo de errores
+│   ├── migrations/               # Migraciones de BD
+│   ├── models/                   # Modelos Sequelize
+│   │   ├── ActivityLog.js
+│   │   ├── Brand.js
+│   │   ├── Category.js
+│   │   ├── Product.js
+│   │   ├── User.js
+│   │   └── index.js
+│   ├── routes/                   # Rutas de la API
+│   │   ├── activities.js
+│   │   ├── auth.js
+│   │   ├── brands.js
+│   │   ├── categories.js
+│   │   ├── products.js
+│   │   ├── users.js
+│   │   └── index.js
+│   ├── seeders/                  # Datos iniciales
+│   ├── .sequelizerc             # Config Sequelize CLI
+│   ├── package.json
+│   └── server.js                 # Servidor principal
+├── web/                          # Frontend Vue.js
+│   ├── src/
+│   │   ├── assets/
+│   │   │   └── styles/
+│   │   │       └── main.scss     # Estilos globales
+│   │   ├── components/           # Componentes reutilizables
+│   │   │   ├── Activities/
+│   │   │   ├── Brands/
+│   │   │   ├── Categories/
+│   │   │   ├── Products/
+│   │   │   └── Users/
+│   │   ├── layouts/
+│   │   │   └── DashboardLayout.vue
+│   │   ├── router/
+│   │   │   └── index.js          # Configuración rutas
+│   │   ├── services/             # Servicios API
+│   │   │   ├── api.js
+│   │   │   ├── authService.js
+│   │   │   ├── brandService.js
+│   │   │   ├── categoryService.js
+│   │   │   ├── productService.js
+│   │   │   └── userService.js
+│   │   ├── stores/               # Estado global (Pinia)
+│   │   │   ├── auth.js
+│   │   │   └── products.js
+│   │   ├── views/                # Páginas principales
+│   │   │   ├── Activities/
+│   │   │   ├── Brands/
+│   │   │   ├── Categories/
+│   │   │   ├── Dashboard/
+│   │   │   ├── Errors/
+│   │   │   ├── Login/
+│   │   │   ├── Products/
+│   │   │   └── Users/
+│   │   ├── App.vue
+│   │   └── main.js
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.js
 └── README.md
 ```
 

@@ -1,8 +1,8 @@
 import api from "./api"
 
 export const brandService = {
-  getAll() {
-    return api.get("/brands")
+  getAll(config = {}) {
+    return api.get("/brands", config)
   },
 
   create(data) {
