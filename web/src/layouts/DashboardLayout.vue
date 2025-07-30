@@ -73,7 +73,7 @@
               <span v-if="isSidebarOpen">Importar Datos</span>
             </router-link>
           </li>
-          <li class="nav-item mb-2" v-if="canImport">
+          <li class="nav-item mb-2">
             <button @click="logout" class="btn btn-outline-light" :class="{ 'btn-sm w-100': isSidebarOpen }">
               <font-awesome-icon icon="sign-out-alt" :class="{ 'me-2': isSidebarOpen }" />
               <span v-if="isSidebarOpen">Cerrar Sesión</span>
