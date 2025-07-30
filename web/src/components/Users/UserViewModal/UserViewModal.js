@@ -1,5 +1,11 @@
+import { ref } from 'vue'
+import UserPermissionsModal from '../UserPermissionsModal/UserPermissionsModal.vue'
+
 export default {
     name: 'UserViewModal',
+    components: {
+        UserPermissionsModal
+    },
     props: {
         user: {
             type: Object,
@@ -7,7 +13,8 @@ export default {
         }
     },
     emits: ['close'],
-    setup() {
+    setup(props) {
+        const showPermissionsModal = ref(false)
         const getRoleBadgeColor = (role) => {
             const colors = {
                 dev: 'danger',
@@ -37,10 +44,21 @@ export default {
             })
         }
 
+        const openPermissionsModal = () => {
+            showPermissionsModal.value = true
+        }
+
+        const closePermissionsModal = () => {
+            showPermissionsModal.value = false
+        }
+
         return {
             getRoleBadgeColor,
             getRoleLabel,
-            formatDate
+            formatDate,
+            showPermissionsModal,
+            openPermissionsModal,
+            closePermissionsModal
         }
     }
 }

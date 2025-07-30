@@ -1,12 +1,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { userService } from '@/services/userService'
 import { useToast } from 'vue-toastification'
-import UserPermissions from '../UserPermissions/UserPermissions.vue'
+import UserPermissionsModal from '../UserPermissionsModal/UserPermissionsModal.vue'
 
 export default {
     name: 'UserModal',
     components: {
-        UserPermissions
+        UserPermissionsModal
     },
     props: {
         user: {
@@ -29,7 +29,9 @@ export default {
         })
 
         const createdUser = ref(null)
-        const isEdit = computed(() => !!props.user || !!createdUser.value)
+        const showPermissionsModal = ref(false)
+        const isEdit = computed(() => !!props.user)
+        const canManagePermissions = computed(() => !!props.user || !!createdUser.value)
         const userForPermissions = computed(() => createdUser.value || props.user)
 
         const validateForm = () => {
@@ -72,7 +74,7 @@ export default {
                     delete data.password
                 }
 
-                if (isEdit.value && !createdUser.value) {
+                if (isEdit.value) {
                     await userService.update(props.user.id, data)
                     toast.success('Usuario actualizado exitosamente')
                     emit('saved')
@@ -100,12 +102,24 @@ export default {
             }
         })
 
+        const openPermissionsModal = () => {
+            showPermissionsModal.value = true
+        }
+
+        const closePermissionsModal = () => {
+            showPermissionsModal.value = false
+        }
+
         return {
             form,
             loading,
             errors,
             isEdit,
+            canManagePermissions,
+            showPermissionsModal,
             handleSubmit,
+            openPermissionsModal,
+            closePermissionsModal,
             userForPermissions
         }
     }
