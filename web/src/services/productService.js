@@ -2,7 +2,12 @@ import api from "./api"
 
 export const productService = {
   getAll(params) {
-    return api.get("/products", { params })
+    const queryParams = { ...params }
+    if (queryParams.perPage) {
+      queryParams.limit = queryParams.perPage
+      delete queryParams.perPage
+    }
+    return api.get("/products", { params: queryParams })
   },
 
   getById(id) {

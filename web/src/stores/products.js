@@ -12,6 +12,7 @@ export const useProductStore = defineStore('products', {
       brandId: '',
       categoryId: '',
       perPage: '10',
+      page: 1,
     },
     loading: false,
     toast: useToast(),
@@ -24,7 +25,9 @@ export const useProductStore = defineStore('products', {
     async fetchProducts() {
       this.loading = true;
       try {
-        const response = await productService.getAll(this.filters);
+        const params = { ...this.filters };
+        if (!params.page) params.page = 1;
+        const response = await productService.getAll(params);
         this.products = response.data;
         this.pagination = response.pagination;
       } catch (error) {

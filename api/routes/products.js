@@ -50,8 +50,8 @@ const router = express.Router()
 router.get("/", authenticateToken, async (req, res) => {
   try {
     const page = Number.parseInt(req.query.page) || 1
-    const limit = Number.parseInt(req.query.limit) || 10
-    const offset = (page - 1) * limit
+    const limit = req.query.limit === 'all' ? null : (Number.parseInt(req.query.limit) || 10)
+    const offset = limit ? (page - 1) * limit : 0
     const { search, status, brandId, categoryId } = req.query
 
     const where = { isActive: true }
@@ -64,22 +64,27 @@ router.get("/", authenticateToken, async (req, res) => {
     if (brandId) where.brandId = brandId
     if (categoryId) where.categoryId = categoryId
 
-    const { count, rows } = await Product.findAndCountAll({
+    const queryOptions = {
       where,
       include: [
         { model: Brand, as: "brand", attributes: ["id", "name"] },
         { model: Category, as: "category", attributes: ["id", "name"] },
       ],
-      limit,
-      offset,
       order: [["createdAt", "DESC"]],
-    })
+    }
+
+    if (limit) {
+      queryOptions.limit = limit
+      queryOptions.offset = offset
+    }
+
+    const { count, rows } = await Product.findAndCountAll(queryOptions)
 
     const pagination = {
       currentPage: page,
-      totalPages: Math.ceil(count / limit),
+      totalPages: limit ? Math.ceil(count / limit) : 1,
       totalItems: count,
-      itemsPerPage: limit,
+      itemsPerPage: limit || count,
     }
 
     paginatedResponse(res, rows, pagination)
