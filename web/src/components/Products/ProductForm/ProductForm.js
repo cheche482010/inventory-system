@@ -38,8 +38,8 @@ export default {
         const loadData = async () => {
             try {
                 const [brandsResponse, categoriesResponse] = await Promise.all([
-                    brandService.getAll(),
-                    categoryService.getAll()
+                    brandService.getAllBrands(),
+                    categoryService.getAllCategories()
                 ])
 
                 brands.value = brandsResponse.data

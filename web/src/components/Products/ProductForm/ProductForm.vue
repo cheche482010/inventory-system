@@ -79,7 +79,7 @@
 
             <div class="col-md-4">
               <div class="mb-3">
-                <label for="categoryId" class="form-label">Categoría *</label>
+                <label for="categoryId" class="form-label">Categoría *</label> 
                 <select class="form-select" id="categoryId" v-model="form.categoryId"
                   :class="{ 'is-invalid': errors.categoryId }" required :disabled="loading">
                   <option value="">Seleccionar categoría</option>
