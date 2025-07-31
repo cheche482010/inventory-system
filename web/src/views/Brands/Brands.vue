@@ -89,26 +89,8 @@
           </div>
 
           <!-- PAGINACIÓN -->
-          <nav v-if="showPagination">
-            <ul class="pagination justify-content-center mt-3">
-              <li class="page-item" :class="{ disabled: pagination.currentPage === 1 }">
-                <button class="page-link" @click="changePage(pagination.currentPage - 1)">
-                  Anterior
-                </button>
-              </li>
-              <li v-for="page in visiblePages" :key="page" class="page-item"
-                :class="{ active: page === pagination.currentPage }">
-                <button class="page-link" @click="changePage(page)">
-                  {{ page }}
-                </button>
-              </li>
-              <li class="page-item" :class="{ disabled: pagination.currentPage === pagination.totalPages }">
-                <button class="page-link" @click="changePage(pagination.currentPage + 1)">
-                  Siguiente
-                </button>
-              </li>
-            </ul>
-          </nav>
+          <Pagination v-if="showPagination" :current-page="pagination.currentPage" :total-pages="pagination.totalPages"
+            @page-changed="changePage" />
         </div>
       </div>
     </div>

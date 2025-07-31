@@ -2,13 +2,15 @@ import { ref, computed, onMounted } from 'vue'
 import { permissionService } from '@/services/permissionService'
 import { useToast } from 'vue-toastification'
 import PermissionModal from '@/components/Permissions/Permissions.vue'
+import Pagination from '@/components/Pagination/Pagination.vue'
 
 let searchTimeout
 
 export default {
     name: 'Permissions',
     components: {
-        PermissionModal
+        PermissionModal,
+        Pagination
     },
     setup() {
         const toast = useToast()
@@ -29,18 +31,6 @@ export default {
             search: '',
             resource: '',
             limit: '20'
-        })
-
-        const visiblePages = computed(() => {
-            const current = pagination.value.currentPage
-            const total = pagination.value.totalPages
-            const pages = []
-
-            for (let i = Math.max(1, current - 2); i <= Math.min(total, current + 2); i++) {
-                pages.push(i)
-            }
-
-            return pages
         })
 
         const loadPermissions = async () => {
@@ -140,7 +130,6 @@ export default {
             editingPermission,
             pagination,
             filters,
-            visiblePages,
             getActionBadgeColor,
             applyFilters,
             debouncedSearch,

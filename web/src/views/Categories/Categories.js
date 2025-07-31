@@ -1,15 +1,16 @@
 import { ref, computed, onMounted } from 'vue'
 import Swal from 'sweetalert2'
 import { useAuthStore } from '@/stores/auth'
-import { useProductStore } from '@/stores/products'
 import { categoryService } from '@/services/categoryService'
 import { useToast } from 'vue-toastification'
 import CategoryModal from '@/components/Categories/CategoryModal.vue'
+import Pagination from '@/components/Pagination/Pagination.vue'
 
 export default {
     name: 'Categories',
     components: {
-        CategoryModal
+        CategoryModal,
+        Pagination
     },
     setup() {
         const authStore = useAuthStore()
@@ -25,7 +26,7 @@ export default {
             perPage: "10",
             page: 1
         })
-        
+
         const pagination = ref({
             currentPage: 1,
             totalPages: 1,
@@ -50,17 +51,7 @@ export default {
                 categories.value = Array.isArray(response.data) ? response.data : []
 
                 if (response.pagination) {
-                    const actualItemsPerPage = filters.value.perPage === 'all' ? categories.value.length : Number(filters.value.perPage)
-                    const isLastPage = categories.value.length < actualItemsPerPage
-                    const currentPage = filters.value.page
-                    const actualTotalPages = isLastPage ? currentPage : Math.max(currentPage, Math.ceil(response.pagination.totalItems / actualItemsPerPage))
-                    
-                    pagination.value = {
-                        currentPage: currentPage,
-                        totalPages: actualTotalPages,
-                        totalItems: response.pagination.totalItems,
-                        itemsPerPage: actualItemsPerPage
-                    }
+                    pagination.value = response.pagination
                 } else {
                     pagination.value = {
                         currentPage: 1,
@@ -165,16 +156,6 @@ export default {
             loadCategories()
         })
 
-        const visiblePages = computed(() => {
-            const current = pagination.value.currentPage
-            const total = pagination.value.totalPages
-            const pages = []
-            for (let i = Math.max(1, current - 2); i <= Math.min(total, current + 2); i++) {
-                pages.push(i)
-            }
-            return pages
-        })
-
         const showPagination = computed(() => filters.value.perPage !== 'all' && pagination.value.totalPages > 1)
 
         return {
@@ -186,7 +167,6 @@ export default {
             canDelete,
             filters,
             pagination,
-            visiblePages,
             showPagination,
             debouncedSearch,
             applyFilters,

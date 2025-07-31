@@ -4,11 +4,13 @@ import { useAuthStore } from '@/stores/auth'
 import { brandService } from '@/services/brandService'
 import { useToast } from 'vue-toastification'
 import BrandModal from '@/components/Brands/BrandModal.vue'
+import Pagination from '@/components/Pagination/Pagination.vue'
 
 export default {
   name: 'Brands',
   components: {
-    BrandModal
+    BrandModal,
+    Pagination
   },
   setup() {
     const authStore = useAuthStore()
@@ -49,17 +51,7 @@ export default {
         brands.value = Array.isArray(response.data) ? response.data : []
 
         if (response.pagination) {
-          const actualItemsPerPage = filters.value.perPage === 'all' ? brands.value.length : Number(filters.value.perPage)
-          const isLastPage = brands.value.length < actualItemsPerPage
-          const currentPage = filters.value.page
-          const actualTotalPages = isLastPage ? currentPage : Math.max(currentPage, Math.ceil(response.pagination.totalItems / actualItemsPerPage))
-
-          pagination.value = {
-            currentPage: currentPage,
-            totalPages: actualTotalPages,
-            totalItems: response.pagination.totalItems,
-            itemsPerPage: actualItemsPerPage
-          }
+          pagination.value = response.pagination
         } else {
           pagination.value = {
             currentPage: 1,
@@ -153,16 +145,6 @@ export default {
       loadBrands()
     })
 
-    const visiblePages = computed(() => {
-      const current = pagination.value.currentPage
-      const total = pagination.value.totalPages
-      const pages = []
-      for (let i = Math.max(1, current - 2); i <= Math.min(total, current + 2); i++) {
-        pages.push(i)
-      }
-      return pages
-    })
-
     const showPagination = computed(() => filters.value.perPage !== 'all' && pagination.value.totalPages > 1)
 
     return {
@@ -174,7 +156,6 @@ export default {
       canDelete,
       filters,
       pagination,
-      visiblePages,
       showPagination,
       debouncedSearch,
       applyFilters,

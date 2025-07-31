@@ -7,6 +7,7 @@ import { categoryService } from '@/services/categoryService';
 import ProductModal from '@/components/Products/ProductModal/ProductModal.vue';
 import ProductForm from '@/components/Products/ProductForm/ProductForm.vue';
 import ExportDropdown from '@/components/Products/ExportDropdown/ExportDropdown.vue';
+import Pagination from '@/components/Pagination/Pagination.vue';
 import { storeToRefs } from 'pinia';
 
 let searchTimeout;
@@ -17,6 +18,7 @@ export default {
     ProductModal,
     ProductForm,
     ExportDropdown,
+    Pagination,
   },
   setup() {
     const authStore = useAuthStore();
@@ -33,16 +35,6 @@ export default {
     const canCreate = computed(() => authStore.hasPermission('products:create'));
     const canDelete = computed(() => authStore.hasPermission('products:delete'));
     const canExport = computed(() => authStore.hasPermission('products:export'));
-
-    const visiblePages = computed(() => {
-      const current = pagination.value.currentPage;
-      const total = pagination.value.totalPages;
-      const pages = [];
-      for (let i = Math.max(1, current - 2); i <= Math.min(total, current + 2); i++) {
-        pages.push(i);
-      }
-      return pages;
-    });
 
     const loadBrands = async () => {
       try {
@@ -149,7 +141,6 @@ export default {
       canCreate,
       canDelete,
       canExport,
-      visiblePages,
       showPagination,
       applyFilters,
       debouncedSearch,

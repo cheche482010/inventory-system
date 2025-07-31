@@ -119,6 +119,7 @@ router.get("/", authenticateToken, async (req, res) => {
       limit,
       offset,
       order: [["name", "ASC"]],
+      distinct: true,
     })
 
     const categoriesWithProductCount = rows.map((category) => ({

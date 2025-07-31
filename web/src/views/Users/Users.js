@@ -4,6 +4,7 @@ import { userService } from '@/services/userService'
 import { useToast } from 'vue-toastification'
 import UserModal from '@/components/Users/UserModal/UserModal.vue'
 import UserViewModal from '@/components/Users/UserViewModal/UserViewModal.vue'
+import Pagination from '@/components/Pagination/Pagination.vue'
 import Swal from 'sweetalert2'
 import { debounce } from 'lodash'
 
@@ -11,7 +12,8 @@ export default {
     name: 'Users',
     components: {
         UserModal,
-        UserViewModal
+        UserViewModal,
+        Pagination
     },
     setup() {
         const authStore = useAuthStore()
@@ -91,21 +93,6 @@ export default {
                 loadUsers()
             }
         }
-
-        const visiblePages = computed(() => {
-            const current = pagination.value.currentPage
-            const total = pagination.value.totalPages
-            const pages = []
-            
-            let start = Math.max(1, current - 2)
-            let end = Math.min(total, current + 2)
-            
-            for (let i = start; i <= end; i++) {
-                pages.push(i)
-            }
-            
-            return pages
-        })
 
         const getRoleBadgeColor = (role) => {
             const colors = {
@@ -195,7 +182,6 @@ export default {
             currentUser,
             hasNoResults,
             showPagination,
-            visiblePages,
             getRoleBadgeColor,
             getRoleLabel,
             viewUser,

@@ -115,6 +115,7 @@ router.get("/", authenticateToken, async (req, res) => {
       limit,
       offset,
       order: [["id", "ASC"]],
+      distinct: true,
     })
 
     const brandsWithProductCount = rows.map((brand) => ({
