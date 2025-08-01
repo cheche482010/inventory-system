@@ -159,7 +159,7 @@ router.get("/search", [authenticateToken, checkPermission("users", "read")], asy
     const page = Number.parseInt(req.query.page) || 1
     const limit = Number.parseInt(req.query.limit) || 10
     const offset = (page - 1) * limit
-    const { search, role, isActive } = req.query
+    const { search, role, isActive, sortBy, sortOrder } = req.query
 
     const where = {}
 
@@ -174,12 +174,14 @@ router.get("/search", [authenticateToken, checkPermission("users", "read")], asy
     if (role) where.role = role
     if (isActive !== undefined) where.isActive = isActive === "true"
 
+    const order = sortBy && sortOrder ? [[sortBy, sortOrder]] : [["createdAt", "DESC"]]
+
     const { count, rows } = await User.findAndCountAll({
       where,
       attributes: { exclude: ["password"] },
       limit,
       offset,
-      order: [["createdAt", "DESC"]],
+      order,
     })
 
     const pagination = {
@@ -256,7 +258,7 @@ router.get("/", [authenticateToken, checkPermission("users", "read")], async (re
     const page = Number.parseInt(req.query.page) || 1
     const limit = Number.parseInt(req.query.limit) || 10
     const offset = (page - 1) * limit
-    const { search, role, isActive } = req.query
+    const { search, role, isActive, sortBy, sortOrder } = req.query
 
     const where = {}
 
@@ -271,6 +273,8 @@ router.get("/", [authenticateToken, checkPermission("users", "read")], async (re
     if (role) where.role = role
     if (isActive !== undefined) where.isActive = isActive === "true"
 
+    const order = sortBy && sortOrder ? [[sortBy, sortOrder]] : [["createdAt", "DESC"]]
+
     const { count, rows } = await User.findAndCountAll({
       where,
       attributes: { exclude: ["password"] },
@@ -284,7 +288,7 @@ router.get("/", [authenticateToken, checkPermission("users", "read")], async (re
       ],
       limit,
       offset,
-      order: [["createdAt", "DESC"]],
+      order,
     })
 
     const usersWithActivityCount = rows.map((user) => ({

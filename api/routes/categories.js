@@ -97,13 +97,15 @@ router.get("/", authenticateToken, async (req, res) => {
     const page = Number.parseInt(req.query.page) || 1
     const limit = Number.parseInt(req.query.limit) || 10
     const offset = (page - 1) * limit
-    const { search } = req.query
+    const { search, sortBy, sortOrder } = req.query
 
     const where = { isActive: true }
 
     if (search) {
       where[Op.or] = [{ name: { [Op.like]: `%${search}%` } }, { description: { [Op.like]: `%${search}%` } }]
     }
+
+    const order = sortBy && sortOrder ? [[sortBy, sortOrder]] : [["name", "ASC"]]
 
     const { count, rows } = await Category.findAndCountAll({
       where,
@@ -118,7 +120,7 @@ router.get("/", authenticateToken, async (req, res) => {
       ],
       limit,
       offset,
-      order: [["name", "ASC"]],
+      order,
       distinct: true,
     })
 

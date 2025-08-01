@@ -8,34 +8,8 @@
       </button>
     </div>
 
-    <!-- FILTROS -->
-    <div class="card mb-4">
-      <div class="card-body">
-        <div class="row g-3">
-          <div class="col-md-4">
-            <label class="form-label">Buscar</label>
-            <input type="text" class="form-control" placeholder="Nombre o descripción..." v-model="filters.search"
-              @input="debouncedSearch" />
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">Mostrar</label>
-            <select class="form-select" v-model="filters.perPage" @change="applyFilters">
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="40">40</option>
-              <option value="50">50</option>
-              <option value="all">Todas</option>
-            </select>
-          </div>
-          <div class="col-md-2 d-flex align-items-end">
-            <button @click="clearFilters" class="btn btn-outline-secondary">
-              <font-awesome-icon icon="eraser" class="me-2" />
-              Limpiar Filtros
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <FilterSection v-model="filters" :config="filterConfig" search-placeholder="Nombre o descripción..."
+      @filter="applyFilters" @clear="clearFilters" />
 
     <div class="card">
       <div class="card-body">
@@ -49,11 +23,26 @@
             <table class="table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Nombre</th>
-                  <th>Descripción</th>
+                  <th>#</th>
+                  <th @click="sort('name')" class="sortable">
+                    Nombre
+                    <font-awesome-icon v-if="filters.sortBy === 'name'"
+                      :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                    <font-awesome-icon v-else icon="sort" class="text-muted" />
+                  </th>
+                  <th @click="sort('description')" class="sortable">
+                    Descripción
+                    <font-awesome-icon v-if="filters.sortBy === 'description'"
+                      :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                    <font-awesome-icon v-else icon="sort" class="text-muted" />
+                  </th>
                   <th>Productos</th>
-                  <th>Fecha Creación</th>
+                  <th @click="sort('createdAt')" class="sortable">
+                    Fecha Creación
+                    <font-awesome-icon v-if="filters.sortBy === 'createdAt'"
+                      :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                    <font-awesome-icon v-else icon="sort" class="text-muted" />
+                  </th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -66,8 +55,8 @@
                     </div>
                   </td>
                 </tr>
-                <tr v-for="category in categories" :key="category.id" v-else>
-                  <td>{{ category.id }}</td>
+                <tr v-for="(category, index) in categories" :key="category.id" v-else>
+                  <td>{{ getRowNumber(index) }}</td>
                   <td>{{ category.name }}</td>
                   <td>{{ category.description || '-' }}</td>
                   <td>

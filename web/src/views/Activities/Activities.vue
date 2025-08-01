@@ -38,6 +38,7 @@
             <table class="table">
               <thead>
                 <tr>
+                  <th>#</th>
                   <th>Fecha</th>
                   <th>Usuario</th>
                   <th>Acción</th>
@@ -55,7 +56,8 @@
                     </div>
                   </td>
                 </tr>
-                <tr v-for="activity in activities" :key="activity.id">
+                <tr v-for="(activity, index) in activities" :key="activity.id">
+                  <td>{{ getRowNumber(index) }}</td>
                   <td>{{ formatDate(activity.createdAt) }}</td>
                   <td>
                     <div>

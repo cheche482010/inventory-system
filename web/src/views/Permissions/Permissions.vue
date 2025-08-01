@@ -8,46 +8,8 @@
             </button>
         </div>
 
-        <!-- Filters -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Buscar</label>
-                        <input type="text" class="form-control" placeholder="Nombre o descripción..."
-                            v-model="filters.search" @input="debouncedSearch" />
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Recurso</label>
-                        <select class="form-select" v-model="filters.resource" @change="applyFilters">
-                            <option value="">Todos los recursos</option>
-                            <option value="products">Productos</option>
-                            <option value="brands">Marcas</option>
-                            <option value="categories">Categorías</option>
-                            <option value="users">Usuarios</option>
-                            <option value="activities">Actividades</option>
-                            <option value="dashboard">Dashboard</option>
-                            <option value="permissions">Permisos</option>
-                            <option value="import">Importación</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Mostrar</label>
-                        <select class="form-select" v-model="filters.limit" @change="applyFilters">
-                            <option value="20">20</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3 d-flex align-items-end">
-                        <button @click="clearFilters" class="btn btn-outline-secondary">
-                            <font-awesome-icon icon="eraser" class="me-2" />
-                            Limpiar Filtros
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <FilterSection v-model="filters" :config="filterConfig" search-placeholder="Nombre o descripción..."
+            @filter="applyFilters" @clear="clearFilters" />
 
         <!-- Permissions Table -->
         <div class="card">
@@ -61,25 +23,52 @@
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th>Nombre</th>
-                                    <th>Descripción</th>
-                                    <th>Recurso</th>
-                                    <th>Acción</th>
+                                    <th>#</th>
+                                    <th @click="sort('name')" class="sortable">
+                                        Nombre
+                                        <font-awesome-icon v-if="filters.sortBy === 'name'"
+                                            :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                                        <font-awesome-icon v-else icon="sort" class="text-muted" />
+                                    </th>
+                                    <th @click="sort('description')" class="sortable">
+                                        Descripción
+                                        <font-awesome-icon v-if="filters.sortBy === 'description'"
+                                            :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                                        <font-awesome-icon v-else icon="sort" class="text-muted" />
+                                    </th>
+                                    <th @click="sort('resource')" class="sortable">
+                                        Recurso
+                                        <font-awesome-icon v-if="filters.sortBy === 'resource'"
+                                            :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                                        <font-awesome-icon v-else icon="sort" class="text-muted" />
+                                    </th>
+                                    <th @click="sort('action')" class="sortable">
+                                        Acción
+                                        <font-awesome-icon v-if="filters.sortBy === 'action'"
+                                            :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                                        <font-awesome-icon v-else icon="sort" class="text-muted" />
+                                    </th>
                                     <th>Estado</th>
-                                    <th>Fecha Creación</th>
+                                    <th @click="sort('createdAt')" class="sortable">
+                                        Fecha Creación
+                                        <font-awesome-icon v-if="filters.sortBy === 'createdAt'"
+                                            :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                                        <font-awesome-icon v-else icon="sort" class="text-muted" />
+                                    </th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-if="permissions.length === 0">
-                                    <td colspan="7" class="text-center py-4">
+                                    <td colspan="8" class="text-center py-4">
                                         <div class="alert alert-info">
                                             <font-awesome-icon icon="exclamation-triangle" class="me-2" />
                                             No se encontraron permisos que coincidan con los filtros aplicados.
                                         </div>
                                     </td>
                                 </tr>
-                                <tr v-for="permission in permissions" :key="permission.id" v-else>
+                                <tr v-for="(permission, index) in permissions" :key="permission.id" v-else>
+                                    <td>{{ getRowNumber(index) }}</td>
                                     <td>
                                         <code>{{ permission.name }}</code>
                                     </td>

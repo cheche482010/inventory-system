@@ -13,6 +13,8 @@ export const useProductStore = defineStore('products', {
       categoryId: '',
       perPage: '10',
       page: 1,
+      sortBy: 'name',
+      sortOrder: 'asc',
     },
     loading: false,
     toast: useToast(),

@@ -130,3 +130,11 @@ body {
 .fade-leave-to {
   opacity: 0;
 }
+
+.sortable {
+  cursor: pointer;
+}
+
+.sortable:hover {
+  background-color: #f8f9fa;
+}

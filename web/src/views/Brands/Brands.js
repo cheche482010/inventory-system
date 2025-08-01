@@ -5,12 +5,14 @@ import { brandService } from '@/services/brandService'
 import { useToast } from 'vue-toastification'
 import BrandModal from '@/components/Brands/BrandModal.vue'
 import Pagination from '@/components/Pagination/Pagination.vue'
+import FilterSection from '@/components/FilterSection/FilterSection.vue'
 
 export default {
   name: 'Brands',
   components: {
     BrandModal,
-    Pagination
+    Pagination,
+    FilterSection,
   },
   setup() {
     const authStore = useAuthStore()
@@ -24,7 +26,9 @@ export default {
     const filters = ref({
       search: "",
       perPage: "10",
-      page: 1
+      page: 1,
+      sortBy: 'createdAt',
+      sortOrder: 'desc'
     })
 
     const pagination = ref({
@@ -43,6 +47,8 @@ export default {
         const params = {
           page: filters.value.page,
           limit: filters.value.perPage === 'all' ? 9999 : Number(filters.value.perPage),
+          sortBy: filters.value.sortBy,
+          sortOrder: filters.value.sortOrder,
         }
         if (filters.value.search) params.search = filters.value.search
 
@@ -67,17 +73,23 @@ export default {
       }
     }
 
-    // Filtros y paginación
-    let searchTimeout
-    const debouncedSearch = () => {
-      clearTimeout(searchTimeout)
-      searchTimeout = setTimeout(() => {
-        filters.value.page = 1
-        loadBrands()
-      }, 500)
-    }
+    const filterConfig = computed(() => [
+      { type: 'search', key: 'search', col: 'col-md-4' },
+      { type: 'perPage', key: 'perPage', col: 'col-md-2' },
+    ]);
+
     const applyFilters = () => {
       filters.value.page = 1
+      loadBrands()
+    }
+
+    const sort = (field) => {
+      if (filters.value.sortBy === field) {
+        filters.value.sortOrder = filters.value.sortOrder === 'asc' ? 'desc' : 'asc'
+      } else {
+        filters.value.sortBy = field
+        filters.value.sortOrder = 'asc'
+      }
       loadBrands()
     }
     const changePage = (page) => {
@@ -147,6 +159,13 @@ export default {
 
     const showPagination = computed(() => filters.value.perPage !== 'all' && pagination.value.totalPages > 1)
 
+    const getRowNumber = (index) => {
+      if (filters.value.perPage === 'all') {
+        return index + 1
+      }
+      return (pagination.value.currentPage - 1) * pagination.value.itemsPerPage + index + 1
+    }
+
     return {
       brands,
       loading,
@@ -157,7 +176,6 @@ export default {
       filters,
       pagination,
       showPagination,
-      debouncedSearch,
       applyFilters,
       changePage,
       clearFilters,
@@ -166,7 +184,10 @@ export default {
       confirmDelete,
       closeModal,
       handleSaved,
-      formatDate
+      formatDate,
+      sort,
+      filterConfig,
+      getRowNumber,
     }
   }
 }

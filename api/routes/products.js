@@ -52,7 +52,7 @@ router.get("/", authenticateToken, async (req, res) => {
     const page = Number.parseInt(req.query.page) || 1
     const limit = req.query.limit === 'all' ? null : (Number.parseInt(req.query.limit) || 10)
     const offset = limit ? (page - 1) * limit : 0
-    const { search, status, brandId, categoryId } = req.query
+    const { search, status, brandId, categoryId, sortBy, sortOrder } = req.query
 
     const where = { isActive: true }
 
@@ -64,13 +64,24 @@ router.get("/", authenticateToken, async (req, res) => {
     if (brandId) where.brandId = brandId
     if (categoryId) where.categoryId = categoryId
 
+    let order = [["name", "ASC"]]
+    if (sortBy && sortOrder) {
+      if (sortBy === 'brand.name') {
+        order = [[{ model: Brand, as: 'brand' }, 'name', sortOrder]]
+      } else if (sortBy === 'category.name') {
+        order = [[{ model: Category, as: 'category' }, 'name', sortOrder]]
+      } else {
+        order = [[sortBy, sortOrder]]
+      }
+    }
+
     const queryOptions = {
       where,
       include: [
         { model: Brand, as: "brand", attributes: ["id", "name"] },
         { model: Category, as: "category", attributes: ["id", "name"] },
       ],
-      order: [["createdAt", "DESC"]],
+      order,
     }
 
     if (limit) {
@@ -89,6 +100,7 @@ router.get("/", authenticateToken, async (req, res) => {
 
     paginatedResponse(res, rows, pagination)
   } catch (error) {
+    console.log(error)
     errorResponse(res, "Error al obtener productos")
   }
 })

@@ -104,6 +104,10 @@ export default {
             })
         }
 
+        const getRowNumber = (index) => {
+            return (pagination.value.currentPage - 1) * pagination.value.itemsPerPage + index + 1
+        }
+
         onMounted(() => {
             loadActivities()
         })
@@ -121,7 +125,8 @@ export default {
             viewDetails,
             applyFilters,
             changePage,
-            formatDate
+            formatDate,
+            getRowNumber
         }
     }
 }

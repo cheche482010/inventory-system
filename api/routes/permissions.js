@@ -5,7 +5,7 @@ const { authenticateToken, authorize } = require("../middleware/auth")
 const { logActivity } = require("../middleware/activityLogger")
 const { successResponse, errorResponse, paginatedResponse } = require("../helpers/responseHelper")
 const { handleValidationErrors } = require("../helpers/validationHelper")
-const { Op } = require("sequelize")
+const { Op, Sequelize } = require("sequelize")
 
 const router = express.Router()
 
@@ -112,24 +112,29 @@ router.get("/", [authenticateToken, authorize("dev")], async (req, res) => {
     const page = Number.parseInt(req.query.page) || 1
     const limit = Number.parseInt(req.query.limit) || 20
     const offset = (page - 1) * limit
-    const { search, resource } = req.query
+    const { search, resource, sortBy, sortOrder } = req.query
 
     const where = { isActive: true }
 
     if (search) {
-      where[Op.or] = [{ name: { [Op.like]: `%${search}%` } }, { description: { [Op.like]: `%${search}%` } }]
+      const lowerCaseSearch = search.toLowerCase()
+      where[Op.or] = [
+        Sequelize.where(Sequelize.fn("LOWER", Sequelize.col("name")), { [Op.like]: "%" + lowerCaseSearch + "%" }),
+        Sequelize.where(Sequelize.fn("LOWER", Sequelize.col("description")), {
+          [Op.like]: "%" + lowerCaseSearch + "%",
+        }),
+      ]
     }
 
     if (resource) where.resource = resource
+
+    const order = sortBy && sortOrder ? [[sortBy, sortOrder]] : [["resource", "ASC"], ["action", "ASC"]]
 
     const { count, rows } = await Permission.findAndCountAll({
       where,
       limit,
       offset,
-      order: [
-        ["resource", "ASC"],
-        ["action", "ASC"],
-      ],
+      order,
     })
 
     const pagination = {

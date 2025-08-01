@@ -5,15 +5,16 @@ import { useToast } from 'vue-toastification'
 import UserModal from '@/components/Users/UserModal/UserModal.vue'
 import UserViewModal from '@/components/Users/UserViewModal/UserViewModal.vue'
 import Pagination from '@/components/Pagination/Pagination.vue'
+import FilterSection from '@/components/FilterSection/FilterSection.vue'
 import Swal from 'sweetalert2'
-import { debounce } from 'lodash'
 
 export default {
     name: 'Users',
     components: {
         UserModal,
         UserViewModal,
-        Pagination
+        Pagination,
+        FilterSection,
     },
     setup() {
         const authStore = useAuthStore()
@@ -36,7 +37,9 @@ export default {
             role: '',
             isActive: '',
             page: 1,
-            limit: 10
+            limit: 10,
+            sortBy: 'createdAt',
+            sortOrder: 'desc'
         })
 
         const canCreate = computed(() => authStore.hasPermission('users:create'))
@@ -51,6 +54,8 @@ export default {
                 const params = {
                     page: filters.value.page,
                     limit: filters.value.limit,
+                    sortBy: filters.value.sortBy,
+                    sortOrder: filters.value.sortOrder,
                     ...(filters.value.search && { search: filters.value.search }),
                     ...(filters.value.role && { role: filters.value.role }),
                     ...(filters.value.isActive !== '' && { isActive: filters.value.isActive })
@@ -66,10 +71,31 @@ export default {
             }
         }
 
-        const debouncedSearch = debounce(() => {
-            filters.value.page = 1
-            loadUsers()
-        }, 300)
+        const filterConfig = computed(() => [
+            { type: 'search', key: 'search', col: 'col-md-4' },
+            { type: 'perPage', key: 'limit', col: 'col-md-2' },
+            {
+                type: 'select',
+                key: 'role',
+                label: 'Rol',
+                options: [
+                    { value: 'user', text: 'Usuario' },
+                    { value: 'admin', text: 'Administrador' },
+                    { value: 'dev', text: 'Desarrollador' },
+                ],
+                col: 'col-md-3',
+            },
+            {
+                type: 'select',
+                key: 'isActive',
+                label: 'Estado',
+                options: [
+                    { value: 'true', text: 'Activo' },
+                    { value: 'false', text: 'Inactivo' },
+                ],
+                col: 'col-md-3',
+            },
+        ]);
 
         const applyFilters = () => {
             filters.value.page = 1
@@ -82,7 +108,19 @@ export default {
                 role: '',
                 isActive: '',
                 page: 1,
-                limit: 10
+                limit: 10,
+                sortBy: 'createdAt',
+                sortOrder: 'desc'
+            }
+            loadUsers()
+        }
+
+        const sort = (field) => {
+            if (filters.value.sortBy === field) {
+                filters.value.sortOrder = filters.value.sortOrder === 'asc' ? 'desc' : 'asc'
+            } else {
+                filters.value.sortBy = field
+                filters.value.sortOrder = 'asc'
             }
             loadUsers()
         }
@@ -165,6 +203,10 @@ export default {
             })
         }
 
+        const getRowNumber = (index) => {
+            return (pagination.value.currentPage - 1) * pagination.value.itemsPerPage + index + 1
+        }
+
         onMounted(() => {
             loadUsers()
         })
@@ -190,10 +232,12 @@ export default {
             closeModal,
             handleSaved,
             formatDate,
-            debouncedSearch,
             applyFilters,
             clearFilters,
-            changePage
+            changePage,
+            sort,
+            filterConfig,
+            getRowNumber
         }
     }
 }

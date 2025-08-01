@@ -3,14 +3,14 @@ import { permissionService } from '@/services/permissionService'
 import { useToast } from 'vue-toastification'
 import PermissionModal from '@/components/Permissions/Permissions.vue'
 import Pagination from '@/components/Pagination/Pagination.vue'
-
-let searchTimeout
+import FilterSection from '@/components/FilterSection/FilterSection.vue'
 
 export default {
     name: 'Permissions',
     components: {
         PermissionModal,
-        Pagination
+        Pagination,
+        FilterSection,
     },
     setup() {
         const toast = useToast()
@@ -24,13 +24,15 @@ export default {
             currentPage: 1,
             totalPages: 1,
             totalItems: 0,
-            itemsPerPage: 20
+            itemsPerPage: 10
         })
 
         const filters = ref({
             search: '',
             resource: '',
-            limit: '20'
+            limit: '10',
+            sortBy: 'resource',
+            sortOrder: 'asc'
         })
 
         const loadPermissions = async () => {
@@ -60,16 +62,40 @@ export default {
             return colors[action] || 'secondary'
         }
 
+        const filterConfig = computed(() => [
+            { type: 'search', key: 'search', col: 'col-md-4' },
+            {
+                type: 'select',
+                key: 'resource',
+                label: 'Recurso',
+                options: [
+                    { value: 'products', text: 'Productos' },
+                    { value: 'brands', text: 'Marcas' },
+                    { value: 'categories', text: 'Categorías' },
+                    { value: 'users', text: 'Usuarios' },
+                    { value: 'activities', text: 'Actividades' },
+                    { value: 'dashboard', text: 'Dashboard' },
+                    { value: 'permissions', text: 'Permisos' },
+                    { value: 'import', text: 'Importación' },
+                ],
+                col: 'col-md-3',
+            },
+            { type: 'perPage', key: 'limit', col: 'col-md-2' },
+        ]);
+
         const applyFilters = () => {
             pagination.value.currentPage = 1
             loadPermissions()
         }
 
-        const debouncedSearch = () => {
-            clearTimeout(searchTimeout)
-            searchTimeout = setTimeout(() => {
-                applyFilters()
-            }, 500)
+        const sort = (field) => {
+            if (filters.value.sortBy === field) {
+                filters.value.sortOrder = filters.value.sortOrder === 'asc' ? 'desc' : 'asc'
+            } else {
+                filters.value.sortBy = field
+                filters.value.sortOrder = 'asc'
+            }
+            loadPermissions()
         }
 
         const changePage = (page) => {
@@ -109,7 +135,7 @@ export default {
             filters.value = {
                 search: '',
                 resource: '',
-                limit: '20'
+                limit: '10'
             }
             pagination.value.currentPage = 1
             loadPermissions()
@@ -117,6 +143,10 @@ export default {
 
         const formatDate = (date) => {
             return new Date(date).toLocaleDateString('es-ES')
+        }
+
+        const getRowNumber = (index) => {
+            return (pagination.value.currentPage - 1) * pagination.value.itemsPerPage + index + 1
         }
 
         onMounted(() => {
@@ -132,14 +162,16 @@ export default {
             filters,
             getActionBadgeColor,
             applyFilters,
-            debouncedSearch,
             changePage,
             editPermission,
             confirmDelete,
             closeModal,
             handleSaved,
             clearFilters,
-            formatDate
+            formatDate,
+            sort,
+            filterConfig,
+            getRowNumber,
         }
     }
 }

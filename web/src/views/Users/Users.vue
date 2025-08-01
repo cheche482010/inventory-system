@@ -7,57 +7,12 @@
           <font-awesome-icon icon="plus" class="me-2" />
           Nuevo Usuario
         </button>
-        <!-- <button @click="clearFilters" class="btn btn-outline-secondary">
-          <font-awesome-icon icon="eraser" class="me-2" />
-          Limpiar Filtros
-        </button> -->
       </div>
     </div>
 
     <!-- Filters -->
-    <div class="card mb-4">
-      <div class="card-body">
-        <div class="row g-3">
-          <div class="col-md-4">
-            <label class="form-label">Buscar</label>
-            <input type="text" class="form-control" placeholder="Nombre, apellido o email..." v-model="filters.search"
-              @input="debouncedSearch" />
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">Mostrar</label>
-            <select class="form-select" v-model="filters.limit" @change="applyFilters">
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="50">50</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Rol</label>
-            <select class="form-select" v-model="filters.role" @change="applyFilters">
-              <option value="">Todos</option>
-              <option value="user">Usuario</option>
-              <option value="admin">Administrador</option>
-              <option value="dev">Desarrollador</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Estado</label>
-            <select class="form-select" v-model="filters.isActive" @change="applyFilters">
-              <option value="">Todos</option>
-              <option value="true">Activo</option>
-              <option value="false">Inactivo</option>
-            </select>
-          </div>
-
-          <div class="col-md-3">
-            <button @click="clearFilters" class="btn btn-outline-secondary">
-              <font-awesome-icon icon="eraser" class="me-2" />
-              Limpiar Filtros
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <FilterSection v-model="filters" :config="filterConfig" search-placeholder="Nombre, apellido o email..."
+      @filter="applyFilters" @clear="clearFilters" />
 
     <div class="card">
       <div class="card-body">
@@ -70,12 +25,37 @@
             <table class="table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Nombre</th>
-                  <th>Email</th>
-                  <th>Rol</th>
-                  <th>Estado</th>
-                  <th>Último Login</th>
+                  <th>#</th>
+                  <th @click="sort('firstName')" class="sortable">
+                    Nombre
+                    <font-awesome-icon v-if="filters.sortBy === 'firstName'"
+                      :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                    <font-awesome-icon v-else icon="sort" class="text-muted" />
+                  </th>
+                  <th @click="sort('email')" class="sortable">
+                    Email
+                    <font-awesome-icon v-if="filters.sortBy === 'email'"
+                      :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                    <font-awesome-icon v-else icon="sort" class="text-muted" />
+                  </th>
+                  <th @click="sort('role')" class="sortable">
+                    Rol
+                    <font-awesome-icon v-if="filters.sortBy === 'role'"
+                      :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                    <font-awesome-icon v-else icon="sort" class="text-muted" />
+                  </th>
+                  <th @click="sort('isActive')" class="sortable">
+                    Estado
+                    <font-awesome-icon v-if="filters.sortBy === 'isActive'"
+                      :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                    <font-awesome-icon v-else icon="sort" class="text-muted" />
+                  </th>
+                  <th @click="sort('lastLogin')" class="sortable">
+                    Último Login
+                    <font-awesome-icon v-if="filters.sortBy === 'lastLogin'"
+                      :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                    <font-awesome-icon v-else icon="sort" class="text-muted" />
+                  </th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -88,8 +68,8 @@
                     </div>
                   </td>
                 </tr>
-                <tr v-for="user in users" :key="user.id" v-else>
-                  <td>{{ user.id }}</td>
+                <tr v-for="(user, index) in users" :key="user.id" v-else>
+                  <td>{{ getRowNumber(index) }}</td>
                   <td>{{ user.firstName }} {{ user.lastName }}</td>
                   <td>{{ user.email }}</td>
                   <td>

@@ -93,13 +93,15 @@ router.get("/", authenticateToken, async (req, res) => {
     const page = Number.parseInt(req.query.page) || 1
     const limit = Number.parseInt(req.query.limit) || 10
     const offset = (page - 1) * limit
-    const { search } = req.query
+    const { search, sortBy, sortOrder } = req.query
 
     const where = { isActive: true }
 
     if (search) {
       where.name = { [Op.like]: `%${search}%` }
     }
+
+    const order = sortBy && sortOrder ? [[sortBy, sortOrder]] : [["id", "ASC"]]
 
     const { count, rows } = await Brand.findAndCountAll({
       where,
@@ -114,7 +116,7 @@ router.get("/", authenticateToken, async (req, res) => {
       ],
       limit,
       offset,
-      order: [["id", "ASC"]],
+      order,
       distinct: true,
     })
 

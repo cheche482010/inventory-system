@@ -8,9 +8,8 @@ import ProductModal from '@/components/Products/ProductModal/ProductModal.vue';
 import ProductForm from '@/components/Products/ProductForm/ProductForm.vue';
 import ExportDropdown from '@/components/Products/ExportDropdown/ExportDropdown.vue';
 import Pagination from '@/components/Pagination/Pagination.vue';
+import FilterSection from '@/components/FilterSection/FilterSection.vue';
 import { storeToRefs } from 'pinia';
-
-let searchTimeout;
 
 export default {
   name: 'Products',
@@ -19,6 +18,7 @@ export default {
     ProductForm,
     ExportDropdown,
     Pagination,
+    FilterSection,
   },
   setup() {
     const authStore = useAuthStore();
@@ -58,10 +58,36 @@ export default {
       productStore.fetchProducts();
     };
 
-    const debouncedSearch = () => {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(applyFilters, 500);
-    };
+    const filterConfig = computed(() => [
+      { type: 'search', key: 'search', col: 'col-md-3' },
+      { type: 'perPage', key: 'perPage', col: 'col-md-2' },
+      {
+        type: 'select',
+        key: 'status',
+        label: 'Estado',
+        options: [
+          { value: 'disponible', text: 'Disponible' },
+          { value: 'nuevo', text: 'Nuevo' },
+          { value: 'oferta', text: 'Oferta' },
+          { value: 'agotado', text: 'Agotado' },
+        ],
+        col: 'col-md-2',
+      },
+      {
+        type: 'select',
+        key: 'brandId',
+        label: 'Marca',
+        options: brands.value.map(b => ({ value: b.id, text: b.name })),
+        col: 'col-md-2',
+      },
+      {
+        type: 'select',
+        key: 'categoryId',
+        label: 'Categoría',
+        options: categories.value.map(c => ({ value: c.id, text: c.name })),
+        col: 'col-md-3',
+      },
+    ]);
 
     const changePage = (page) => {
       if (page >= 1 && page <= pagination.value.totalPages) {
@@ -113,7 +139,19 @@ export default {
         brandId: '',
         categoryId: '',
         perPage: '10',
+        sortBy: 'name',
+        sortOrder: 'asc',
       });
+      productStore.fetchProducts();
+    };
+
+    const sort = (field) => {
+      const { sortBy, sortOrder } = productStore.filters;
+      let newSortOrder = 'asc';
+      if (sortBy === field && sortOrder === 'asc') {
+        newSortOrder = 'desc';
+      }
+      productStore.setFilters({ ...productStore.filters, sortBy: field, sortOrder: newSortOrder });
       productStore.fetchProducts();
     };
 
@@ -143,7 +181,6 @@ export default {
       canExport,
       showPagination,
       applyFilters,
-      debouncedSearch,
       changePage,
       viewProduct,
       confirmDelete,
@@ -153,6 +190,8 @@ export default {
       clearFilters,
       hasNoResults,
       handleFormSuccess,
+      sort,
+      filterConfig,
     };
   },
 };
