@@ -73,6 +73,7 @@
             <tr>
               <th>Código</th>
               <th>Nombre</th>
+              <th>Imagen</th>
               <th>Precio</th>
               <th>Marca</th>
               <th>Categoría</th>
@@ -82,7 +83,7 @@
           </thead>
           <tbody>
             <tr v-if="filteredData.length === 0">
-              <td colspan="7" class="text-center py-4">
+              <td colspan="8" class="text-center py-4">
                 <div class="text-muted">
                   <font-awesome-icon icon="search" size="2x" class="mb-2" />
                   <p class="mb-0">No se encontraron resultados con los filtros aplicados</p>
@@ -93,6 +94,26 @@
             <tr v-for="(item, index) in paginatedData" :key="index" v-else>
               <td><strong>{{ item.producto.code }}</strong></td>
               <td>{{ item.producto.name }}</td>
+              <td>
+                <div v-if="item.imagePreview || item.producto.img" class="position-relative">
+                  <img :src="item.imagePreview || item.producto.img" class="img-thumbnail cursor-pointer"
+                    style="width: 50px; height: 50px; object-fit: cover;"
+                    @click="viewImageModal(item.imagePreview || item.producto.img)">
+                  <button class="btn btn-sm btn-danger position-absolute top-0 end-0"
+                    style="transform: translate(50%, -50%); width: 20px; height: 20px; padding: 0; border-radius: 50%;"
+                    @click="removeImage(index + startIndex)" title="Eliminar imagen">
+                    <font-awesome-icon icon="times" style="font-size: 10px;" />
+                  </button>
+                </div>
+                <div v-else>
+                  <input type="file" :ref="`imageInput${index + startIndex}`" accept="image/*" style="display: none;"
+                    @change="handleImageUpload($event, index + startIndex)">
+                  <button class="btn btn-sm btn-outline-primary"
+                    @click="$refs[`imageInput${index + startIndex}`][0].click()" title="Agregar imagen">
+                    <font-awesome-icon icon="plus" />
+                  </button>
+                </div>
+              </td>
               <td class="text-success fw-bold">$ {{ item.producto.price }}</td>
               <td><span class="badge bg-secondary">{{ item.producto.marca.name }}</span></td>
               <td><span class="badge bg-info">{{ item.producto.categories.name }}</span></td>
@@ -134,6 +155,21 @@
     </div>
     <div v-else class="alert alert-info">
       Aún no se ha cargado ningún archivo.
+    </div>
+
+    <!-- Modal para vista previa de imagen -->
+    <div v-if="showImageModal" class="modal show d-block" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Vista previa de imagen</h5>
+            <button type="button" class="btn-close" @click="closeImageModal"></button>
+          </div>
+          <div class="modal-body text-center">
+            <img :src="selectedImage" class="img-fluid" style="max-height: 500px;">
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>

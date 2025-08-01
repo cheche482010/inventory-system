@@ -47,6 +47,13 @@ app.use(express.urlencoded({ extended: true }))
 // Swagger documentation
 swaggerSetup(app)
 
+// Servir archivos estáticos desde la carpeta 'uploads'
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+    setHeaders: (res) => {
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    }
+}));
+
 // Routes
 app.use("/api", routes)
 

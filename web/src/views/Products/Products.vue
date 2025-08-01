@@ -32,6 +32,7 @@
               <thead>
                 <tr>
                   <th>#</th>
+                  <th>Imagen</th>
                   <th @click="sort('code')" class="sortable">
                     Código
                     <font-awesome-icon v-if="filters.sortBy === 'code'"
@@ -81,7 +82,13 @@
                   </td>
                 </tr>
                 <tr v-for="(product, index) in products" :key="product.id" v-else>
-                  <td>{{ (pagination.currentPage - 1) * (filters.perPage === 'all' ? products.length : parseInt(filters.perPage)) + index + 1 }}</td>
+                  <td>{{ (pagination.currentPage - 1) * (filters.perPage === 'all' ? products.length :
+                    parseInt(filters.perPage)) + index + 1 }}</td>
+                  <td>
+                    <img v-if="product.imagen" :src="`${baseUrl}/uploads/${product.imagen}`" :alt="product.name"
+                      class="product-image img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
+                    <span v-else class="text-muted small">Sin imagen</span>
+                  </td>
                   <td>{{ product.code }}</td>
                   <td>{{ product.name.substring(0, 60) }}...</td>
                   <td>{{ product.brand?.name }}</td>

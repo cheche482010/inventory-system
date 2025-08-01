@@ -15,11 +15,17 @@ export const productService = {
   },
 
   create(data) {
-    return api.post("/products", data)
+    const config = data instanceof FormData ? {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    } : {}
+    return api.post("/products", data, config)
   },
 
   update(id, data) {
-    return api.put(`/products/${id}`, data)
+    const config = data instanceof FormData ? {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    } : {}
+    return api.put(`/products/${id}`, data, config)
   },
 
   delete(id) {

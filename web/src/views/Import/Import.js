@@ -16,7 +16,9 @@ export default {
             searchText: '',
             priceFilter: '',
             brandFilter: '',
-            categoryFilter: ''
+            categoryFilter: '',
+            showImageModal: false,
+            selectedImage: null
         };
     },
     computed: {
@@ -141,10 +143,13 @@ export default {
                         },
                         categories: {
                             name: currentCategory
-                        }
+                        },
+                        img: null
                     },
                     editingDesc: false,
-                    tempDesc: ""
+                    tempDesc: "",
+                    imageFile: null,
+                    imagePreview: null
                 });
             }
 
@@ -164,6 +169,36 @@ export default {
         cancelDesc(index) {
             this.excelData[index].editingDesc = false;
             this.excelData[index].tempDesc = "";
+        },
+        handleImageUpload(event, index) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                Swal.fire('Error', 'Solo se permiten archivos de imagen', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.excelData[index].imageFile = file;
+                this.excelData[index].imagePreview = e.target.result;
+                this.excelData[index].producto.img = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        },
+        removeImage(index) {
+            this.excelData[index].imageFile = null;
+            this.excelData[index].imagePreview = null;
+            this.excelData[index].producto.img = null;
+        },
+        viewImageModal(imageUrl) {
+            this.selectedImage = imageUrl;
+            this.showImageModal = true;
+        },
+        closeImageModal() {
+            this.showImageModal = false;
+            this.selectedImage = null;
         },
         onPageChanged(page) {
             this.currentPage = page;
@@ -234,6 +269,7 @@ export default {
                 status: item.producto.status,
                 brand: item.producto.marca.name,
                 category: item.producto.categories.name,
+                img: item.imageFile || item.producto.img,
             }));
 
             try {

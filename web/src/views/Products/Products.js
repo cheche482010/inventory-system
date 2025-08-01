@@ -166,9 +166,14 @@ export default {
       loadCategories();
     });
 
+    const baseUrl = import.meta.env.NODE_ENV === "production"
+      ? `${import.meta.env.PROD_BACKEND_URL}`
+      : `${import.meta.env.LOCAL_BACKEND_URL}`;
+
     return {
       products,
       loading,
+      baseUrl,
       pagination,
       filters,
       brands,

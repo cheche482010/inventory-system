@@ -48,6 +48,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         defaultValue: true,
       },
+      imagen: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
     },
     {
       tableName: "products",

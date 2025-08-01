@@ -18,8 +18,13 @@ export default {
             })
         }
 
+        const baseUrl = import.meta.env.NODE_ENV === "production"
+            ? `${import.meta.env.PROD_BACKEND_URL}`
+            : `${import.meta.env.LOCAL_BACKEND_URL}`;
+
         return {
-            formatDate
+            formatDate,
+            baseUrl
         }
     }
 }
