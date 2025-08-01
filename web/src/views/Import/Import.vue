@@ -2,6 +2,14 @@
   <div class="container mt-4">
     <h3>Importar Datos desde Excel</h3>
 
+    <div class="alert alert-info">
+      <p class="mb-0">
+        <strong>Instrucciones:</strong> El archivo de Excel debe contener las columnas:
+        <code>__EMPTY</code> (Código), <code>__EMPTY_1</code> (Nombre), <code>__EMPTY_2</code> (Marca), <code>__EMPTY_3</code> (Precio).
+        La columna <code>img</code> es opcional y debe contener la URL de la imagen del producto.
+      </p>
+    </div>
+
     <!-- Carga de archivo -->
     <input type="file" @change="handleFileUpload" accept=".xlsx, .xls" class="form-control mb-4" />
 
@@ -73,6 +81,7 @@
             <tr>
               <th>Código</th>
               <th>Nombre</th>
+              <th>Imagen</th>
               <th>Precio</th>
               <th>Marca</th>
               <th>Categoría</th>
@@ -82,7 +91,7 @@
           </thead>
           <tbody>
             <tr v-if="filteredData.length === 0">
-              <td colspan="7" class="text-center py-4">
+              <td colspan="8" class="text-center py-4">
                 <div class="text-muted">
                   <font-awesome-icon icon="search" size="2x" class="mb-2" />
                   <p class="mb-0">No se encontraron resultados con los filtros aplicados</p>
@@ -93,6 +102,10 @@
             <tr v-for="(item, index) in paginatedData" :key="index" v-else>
               <td><strong>{{ item.producto.code }}</strong></td>
               <td>{{ item.producto.name }}</td>
+              <td>
+                <img v-if="item.producto.img" :src="item.producto.img" class="img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
+                <span v-else class="text-muted small">Sin imagen</span>
+              </td>
               <td class="text-success fw-bold">$ {{ item.producto.price }}</td>
               <td><span class="badge bg-secondary">{{ item.producto.marca.name }}</span></td>
               <td><span class="badge bg-info">{{ item.producto.categories.name }}</span></td>

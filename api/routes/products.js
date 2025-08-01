@@ -6,6 +6,9 @@ const { logActivity } = require("../middleware/activityLogger")
 const { successResponse, errorResponse, paginatedResponse } = require("../helpers/responseHelper")
 const { handleValidationErrors } = require("../helpers/validationHelper")
 const { Op } = require("sequelize")
+const upload = require("../middleware/upload")
+const fs = require("fs")
+const path = require("path")
 
 const router = express.Router()
 
@@ -183,6 +186,7 @@ router.post(
   [
     authenticateToken,
     checkPermission("products", "create"),
+    upload.single("imagen"), // Multer middleware for single file upload
     body("code").notEmpty().withMessage("Código requerido"),
     body("name").notEmpty().withMessage("Nombre requerido"),
     body("price").isFloat({ min: 0 }).withMessage("Precio debe ser mayor a 0"),
@@ -194,7 +198,13 @@ router.post(
   logActivity("CREATE", "PRODUCT"),
   async (req, res) => {
     try {
-      const product = await Product.create(req.body)
+      const productData = { ...req.body }
+      if (req.file) {
+        // Guardar solo la ruta relativa
+        productData.imagen = `products/${req.file.filename}`
+      }
+
+      const product = await Product.create(productData)
       const productWithRelations = await Product.findByPk(product.id, {
         include: [
           { model: Brand, as: "brand" },
@@ -235,6 +245,7 @@ router.put(
   [
     authenticateToken,
     checkPermission("products", "update"),
+    upload.single("imagen"), // Multer middleware for single file upload
     body("code").optional().notEmpty().withMessage("Código no puede estar vacío"),
     body("name").optional().notEmpty().withMessage("Nombre no puede estar vacío"),
     body("price").optional().isFloat({ min: 0 }).withMessage("Precio debe ser mayor a 0"),
@@ -254,7 +265,20 @@ router.put(
         return errorResponse(res, "Producto no encontrado", 404)
       }
 
-      await product.update(req.body)
+      const productData = { ...req.body }
+
+      if (req.file) {
+        // Si se sube una nueva imagen, eliminar la anterior si existe
+        if (product.imagen) {
+          const oldImagePath = path.join(__dirname, "..", "uploads", product.imagen)
+          if (fs.existsSync(oldImagePath)) {
+            fs.unlinkSync(oldImagePath)
+          }
+        }
+        productData.imagen = `products/${req.file.filename}`
+      }
+
+      await product.update(productData)
 
       const updatedProduct = await Product.findByPk(product.id, {
         include: [

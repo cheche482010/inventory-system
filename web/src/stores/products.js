@@ -53,5 +53,31 @@ export const useProductStore = defineStore('products', {
         this.toast.error('Error al eliminar producto');
       }
     },
+    async createProduct(productData) {
+      this.loading = true;
+      try {
+        await productService.create(productData);
+        this.toast.success('Producto creado exitosamente');
+        this.fetchProducts();
+      } catch (error) {
+        this.toast.error('Error al crear producto');
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+    async updateProduct(productId, productData) {
+      this.loading = true;
+      try {
+        await productService.update(productId, productData);
+        this.toast.success('Producto actualizado exitosamente');
+        this.fetchProducts();
+      } catch (error) {
+        this.toast.error('Error al actualizar producto');
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
   },
 });

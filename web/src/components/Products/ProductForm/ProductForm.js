@@ -22,6 +22,8 @@ export default {
         const brands = ref([])
         const categories = ref([])
         const errors = ref({})
+        const imagePreview = ref(null)
+        const selectedFile = ref(null)
 
         const form = ref({
             code: '',
@@ -30,7 +32,8 @@ export default {
             price: '',
             status: '',
             brandId: '',
-            categoryId: ''
+            categoryId: '',
+            imagen: null
         })
 
         const isEdit = computed(() => !!props.product)
@@ -53,11 +56,24 @@ export default {
                         price: props.product.price,
                         status: props.product.status,
                         brandId: props.product.brandId,
-                        categoryId: props.product.categoryId
+                        categoryId: props.product.categoryId,
+                        imagen: props.product.imagen ? `${import.meta.env.VITE_API_BASE_URL}/uploads/${props.product.imagen}` : null
                     }
                 }
             } catch (error) {
                 console.error('Error loading data:', error)
+            }
+        }
+
+        const handleFileChange = (event) => {
+            const file = event.target.files[0]
+            if (file) {
+                selectedFile.value = file
+                const reader = new FileReader()
+                reader.onload = (e) => {
+                    imagePreview.value = e.target.result
+                }
+                reader.readAsDataURL(file)
             }
         }
 
@@ -95,11 +111,23 @@ export default {
             if (!validateForm()) return
 
             loading.value = true
+
+            const formData = new FormData()
+            Object.keys(form.value).forEach(key => {
+                if (key !== 'imagen') {
+                    formData.append(key, form.value[key])
+                }
+            })
+
+            if (selectedFile.value) {
+                formData.append('imagen', selectedFile.value)
+            }
+
             try {
                 if (isEdit.value) {
-                    await productStore.updateProduct(props.product.id, form.value)
+                    await productStore.updateProduct(props.product.id, formData)
                 } else {
-                    await productStore.createProduct(form.value)
+                    await productStore.createProduct(formData)
                 }
                 emit('success')
             } catch (error) {
@@ -120,6 +148,8 @@ export default {
             categories,
             errors,
             isEdit,
+            imagePreview,
+            handleFileChange,
             handleSubmit
         }
     }

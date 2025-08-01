@@ -19,17 +19,6 @@ const NODE_ENV = process.env.NODE_ENV || 'development'
 // Security middleware
 app.use(helmet())
 
-// CORS configuration based on environment
-const allowedOrigins = NODE_ENV === 'production' 
-    ? [process.env.PROD_FRONTEND_URL]
-    : [process.env.LOCAL_FRONTEND_URL]
-
-app.use(cors({
-    origin: allowedOrigins,
-    credentials: true,
-    exposedHeaders: ['Authorization', 'Set-Cookie']
-}))
-
 // Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -46,6 +35,20 @@ app.use(express.urlencoded({ extended: true }))
 
 // Swagger documentation
 swaggerSetup(app)
+
+// CORS configuration based on environment
+const allowedOrigins = NODE_ENV === 'production'
+    ? [process.env.PROD_FRONTEND_URL]
+    : [process.env.LOCAL_FRONTEND_URL]
+
+app.use(cors({
+    origin: allowedOrigins,
+    credentials: true,
+    exposedHeaders: ['Authorization', 'Set-Cookie']
+}))
+
+// Servir archivos estáticos desde la carpeta 'uploads'
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use("/api", routes)

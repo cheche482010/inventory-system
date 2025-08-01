@@ -8,9 +8,18 @@
         </div>
         <div class="modal-body">
           <div class="row">
-            <div class="col-md-6">
-              <h6>Información General</h6>
-              <table class="table table-sm">
+            <div class="col-md-4">
+              <img v-if="product.imagen" :src="`${baseUrl}/uploads/${product.imagen}`" :alt="product.name" class="img-fluid rounded mb-3">
+              <div v-else class="text-center text-muted border rounded p-4 mb-3">
+                <font-awesome-icon icon="image" size="3x" />
+                <p class="mt-2">Sin imagen</p>
+              </div>
+            </div>
+            <div class="col-md-8">
+              <div class="row">
+                <div class="col-md-12">
+                  <h6>Información General</h6>
+                  <table class="table table-sm">
                 <tbody>
                   <tr>
                     <td><strong>Código:</strong></td>

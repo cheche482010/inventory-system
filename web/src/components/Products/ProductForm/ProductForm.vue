@@ -44,7 +44,17 @@
           </div>
 
           <div class="row">
-            <div class="col-md-4">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="imagen" class="form-label">Imagen</label>
+                <input type="file" class="form-control" id="imagen" @change="handleFileChange" accept="image/*" :disabled="loading" />
+              </div>
+              <div v-if="imagePreview || (isEdit && form.imagen)">
+                <label class="form-label">Vista Previa</label>
+                <img :src="imagePreview || form.imagen" alt="Vista previa de la imagen" class="img-thumbnail" style="max-width: 150px; max-height: 150px;" />
+              </div>
+            </div>
+            <div class="col-md-6">
               <div class="mb-3">
                 <label for="status" class="form-label">Estado *</label>
                 <select class="form-select" id="status" v-model="form.status" :class="{ 'is-invalid': errors.status }"

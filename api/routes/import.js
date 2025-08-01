@@ -4,6 +4,9 @@ const { authenticateToken, authorize } = require("../middleware/auth")
 const { logActivity } = require("../middleware/activityLogger")
 const { successResponse, errorResponse } = require("../helpers/responseHelper")
 const { Op } = require("sequelize")
+const axios = require("axios")
+const fs = require("fs")
+const path = require("path")
 
 const router = express.Router()
 
@@ -47,6 +50,38 @@ router.post(
         if (item.description !== null && item.description !== undefined) {
           productData.description = item.description
         }
+
+        if (item.img) {
+          try {
+            const response = await axios({
+              url: item.img,
+              method: 'GET',
+              responseType: 'stream'
+            });
+
+            const uploadDir = path.join(__dirname, '..', 'uploads', 'products');
+            if (!fs.existsSync(uploadDir)) {
+              fs.mkdirSync(uploadDir, { recursive: true });
+            }
+
+            const filename = `${Date.now()}-${path.basename(item.img)}`;
+            const imagePath = path.join(uploadDir, filename);
+            const writer = fs.createWriteStream(imagePath);
+            response.data.pipe(writer);
+
+            await new Promise((resolve, reject) => {
+              writer.on('finish', resolve);
+              writer.on('error', reject);
+            });
+
+            productData.imagen = `products/${filename}`;
+
+          } catch (downloadError) {
+            console.error(`Error downloading image for product ${item.code}:`, downloadError.message);
+            // Opcional: agregar a un array de errores de imágenes
+          }
+        }
+
 
         if (product) {
           await product.update(productData)

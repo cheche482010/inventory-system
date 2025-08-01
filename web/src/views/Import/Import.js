@@ -119,6 +119,7 @@ export default {
                 const name = row["__EMPTY_1"];
                 const model = row["__EMPTY_2"];
                 const price = row["__EMPTY_3"];
+                const img = row["img"];
 
                 if (!code && name && name.trim() !== "") {
                     currentCategory = name.trim();
@@ -141,7 +142,8 @@ export default {
                         },
                         categories: {
                             name: currentCategory
-                        }
+                        },
+                        img: img || null
                     },
                     editingDesc: false,
                     tempDesc: ""
@@ -234,6 +236,7 @@ export default {
                 status: item.producto.status,
                 brand: item.producto.marca.name,
                 category: item.producto.categories.name,
+                img: item.producto.img,
             }));
 
             try {

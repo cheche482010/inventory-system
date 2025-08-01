@@ -166,9 +166,12 @@ export default {
       loadCategories();
     });
 
+    const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
     return {
       products,
       loading,
+      baseUrl,
       pagination,
       filters,
       brands,

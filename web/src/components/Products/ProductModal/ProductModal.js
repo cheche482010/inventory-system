@@ -18,8 +18,11 @@ export default {
             })
         }
 
+        const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
         return {
-            formatDate
+            formatDate,
+            baseUrl
         }
     }
 }
