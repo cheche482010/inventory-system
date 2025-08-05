@@ -43,7 +43,7 @@
               <span v-if="isSidebarOpen">Mis Solicitudes</span>
             </router-link>
           </li>
-          <li class="nav-item mb-2" v-if="user.role === 'admin' || user.role === 'dev'">
+          <li class="nav-item mb-2" v-if="userRole === 'admin' || userRole === 'dev'">
             <router-link to="/budgets" class="nav-link" active-class="active" @click="closeSidebarOnMobile">
               <font-awesome-icon icon="file-invoice-dollar" :class="{ 'me-2': isSidebarOpen }" />
               <span v-if="isSidebarOpen">Presupuestos</span>
@@ -75,7 +75,7 @@
           </li>
           <li class="nav-item mb-2" v-if="canViewPermissions">
             <router-link to="/permissions" class="nav-link" active-class="active" @click="closeSidebarOnMobile">
-              <font-awesome-icon icon="shield-alt" :class="{ 'me-2': isSidebarOpen }" />
+              <font-awesome-icon icon="shield-halved" :class="{ 'me-2': isSidebarOpen }" />
               <span v-if="isSidebarOpen">Permisos</span>
             </router-link>
           </li>

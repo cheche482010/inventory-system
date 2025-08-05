@@ -6,12 +6,12 @@ export const budgetService = {
   },
 
   getMyBudgets() {
-    return api.get("/my-budgets");
+    return api.get("/budgets/my");
   },
 
   downloadPdf(id) {
     return api.get(`/budgets/${id}/pdf`, {
-        responseType: 'blob', // Important
+        responseType: 'blob', 
     });
   },
 

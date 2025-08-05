@@ -1,8 +1,10 @@
 <template>
   <div class="dropdown">
-    <button class="btn btn-outline-secondary me-3 position-relative" type="button" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+    <button class="btn btn-outline-secondary me-3 position-relative" type="button" id="notificationDropdown"
+      data-bs-toggle="dropdown" aria-expanded="false">
       <font-awesome-icon :icon="hasUnread ? 'bell' : ['fa', 'bell']" />
-      <span v-if="hasUnread" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light">
+      <span v-if="hasUnread"
+        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light">
         {{ unreadCount }}
       </span>
     </button>
@@ -14,7 +16,9 @@
         <div v-if="notifications.length === 0" class="text-center text-muted p-3">
           No tienes notificaciones.
         </div>
-        <a v-for="notification in notifications" :key="notification.id" class="dropdown-item d-flex align-items-start p-3" href="#" @click.prevent="markAsRead(notification)">
+        <a v-for="notification in notifications" :key="notification.id"
+          class="dropdown-item d-flex align-items-start p-3" :class="getNotificationClass(notification)" href="#"
+          @click.prevent="markAsRead(notification)">
           <div class="me-3">
             <span class="fa-stack fa-lg" :class="`text-${notificationType(notification.type).color}`">
               <i class="fas fa-circle fa-stack-2x"></i>
@@ -22,7 +26,7 @@
             </span>
           </div>
           <div class="flex-grow-1">
-            <p class="mb-0" :class="{ 'fw-bold': !notification.read }">{{ notification.message }}</p>
+            <p class="mb-0">{{ notification.message }}</p>
             <small class="text-muted">{{ new Date(notification.createdAt).toLocaleString() }}</small>
           </div>
         </a>
@@ -62,6 +66,16 @@ export default {
       }
     };
 
+    const getNotificationClass = (notification) => {
+      const baseClass = 'notification-item';
+      const color = notificationType(notification.type).color;
+      let statusClass = `bg-${color}-soft`;
+      if (!notification.read) {
+        statusClass += ' fw-bold';
+      }
+      return `${baseClass} ${statusClass}`;
+    };
+
     const markAsRead = (notification) => {
       notificationStore.markAsRead(notification);
     };
@@ -75,9 +89,39 @@ export default {
       unreadCount,
       hasUnread,
       notificationType,
+      getNotificationClass,
       markAsRead,
       markAllAsRead,
     };
   },
 };
 </script>
+
+<style scoped>
+.notification-item.bg-success-soft {
+  background-color: rgba(25, 135, 84, 0.1);
+}
+
+.notification-item.bg-danger-soft {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.notification-item.bg-info-soft {
+  background-color: rgba(13, 202, 240, 0.1);
+}
+
+.notification-item.bg-secondary-soft {
+  background-color: rgba(108, 117, 125, 0.1);
+}
+
+/* Override Bootstrap's active/focus color */
+.dropdown-item.notification-item:active,
+.dropdown-item.notification-item:focus {
+  background-color: inherit;
+  color: inherit;
+}
+
+.dropdown-item.notification-item.fw-bold {
+  font-weight: 600;
+}
+</style>
