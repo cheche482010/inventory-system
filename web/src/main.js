@@ -43,7 +43,12 @@ import {
   faSortUp,
   faSortDown,
   faKey,
-  faSort
+  faSort,
+  faShoppingCart,
+  faFileInvoiceDollar,
+  faBell,
+  faCartPlus,
+  faReceipt
 } from "@fortawesome/free-solid-svg-icons"
 
 library.add(
@@ -79,7 +84,12 @@ library.add(
   faSortUp,
   faSortDown,
   faKey,
-  faSort
+  faSort,
+  faShoppingCart,
+  faFileInvoiceDollar,
+  faBell,
+  faCartPlus,
+  faReceipt
 )
 
 import App from "./App.vue"

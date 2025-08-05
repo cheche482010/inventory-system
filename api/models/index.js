@@ -30,6 +30,11 @@ db.Product = require("./Product")(sequelize, Sequelize.DataTypes)
 db.ActivityLog = require("./ActivityLog")(sequelize, Sequelize.DataTypes)
 db.Permission = require("./Permission")(sequelize, Sequelize.DataTypes)
 db.UserPermission = require("./UserPermission")(sequelize, Sequelize.DataTypes)
+db.Notification = require("./notification")(sequelize, Sequelize.DataTypes)
+db.Cart = require("./cart")(sequelize, Sequelize.DataTypes)
+db.CartItem = require("./cartitem")(sequelize, Sequelize.DataTypes)
+db.Notification = require("./notification")(sequelize, Sequelize.DataTypes)
+
 
 // Define associations
 Object.keys(db).forEach((modelName) => {

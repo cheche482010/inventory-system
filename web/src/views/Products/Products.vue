@@ -70,6 +70,7 @@
                     <font-awesome-icon v-else icon="sort" class="text-muted" />
                   </th>
                   <th>Acciones</th>
+                  <th v-if="userRole === 'user'">Comprar</th>
                 </tr>
               </thead>
               <tbody>
@@ -113,6 +114,16 @@
                         <font-awesome-icon icon="trash" />
                       </button>
                     </div>
+                  </td>
+                  <td v-if="userRole === 'user'">
+                    <div v-if="product.status !== 'agotado'" class="d-flex" style="width: 150px;">
+                      <input type="number" class="form-control form-control-sm me-2"
+                        v-model.number="quantities[product.id]" min="1" />
+                      <button class="btn btn-sm btn-success" @click="addToCart(product)" title="Añadir al carrito">
+                        <font-awesome-icon icon="cart-plus" />
+                      </button>
+                    </div>
+                    <span v-else class="text-muted small">Agotado</span>
                   </td>
                 </tr>
               </tbody>

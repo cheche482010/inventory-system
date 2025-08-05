@@ -1,7 +1,8 @@
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import Swal from 'sweetalert2';
 import { useAuthStore } from '@/stores/auth';
 import { useProductStore } from '@/stores/products';
+import { useCartStore } from '@/stores/cart';
 import { brandService } from '@/services/brandService';
 import { categoryService } from '@/services/categoryService';
 import ProductModal from '@/components/Products/ProductModal/ProductModal.vue';
@@ -23,8 +24,31 @@ export default {
   setup() {
     const authStore = useAuthStore();
     const productStore = useProductStore();
+    const cartStore = useCartStore();
 
     const { products, loading, pagination, filters, hasNoResults, showPagination } = storeToRefs(productStore);
+    const { userRole } = storeToRefs(authStore);
+
+    const quantities = ref({});
+
+    // Watch for products changes to initialize quantities
+    watch(products, (newProducts) => {
+      newProducts.forEach(p => {
+        if (quantities.value[p.id] === undefined) {
+          quantities.value[p.id] = 1;
+        }
+      });
+    }, { deep: true });
+
+    const addToCart = (product) => {
+      const quantity = quantities.value[product.id];
+      if (quantity > 0) {
+        cartStore.addItem({
+          productId: product.id,
+          quantity: quantity,
+        });
+      }
+    };
 
     const brands = ref([]);
     const categories = ref([]);
@@ -197,6 +221,10 @@ export default {
       handleFormSuccess,
       sort,
       filterConfig,
+      // For cart
+      userRole,
+      quantities,
+      addToCart,
     };
   },
 };

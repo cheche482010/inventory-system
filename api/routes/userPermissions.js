@@ -25,9 +25,21 @@ const router = express.Router({ mergeParams: true })
  *       200:
  *         description: Lista de permisos del usuario
  */
+const canGetUserPermissions = async (req, res, next) => {
+  const requestedUserId = parseInt(req.params.userId, 10);
+  const loggedInUserId = req.user.id;
+
+  if (requestedUserId === loggedInUserId) {
+    return next();
+  }
+
+  // If not accessing their own, fall back to permission check
+  return checkPermission("users", "read")(req, res, next);
+};
+
 router.get(
   "/",
-  [authenticateToken, checkPermission("users", "read")],
+  [authenticateToken, canGetUserPermissions],
   async (req, res) => {
     try {
       const user = await User.findByPk(req.params.userId, {

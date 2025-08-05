@@ -4,16 +4,26 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useCartStore } from '@/stores/cart'
+import { storeToRefs } from 'pinia'
 import { faBars, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons'
 import { library } from "@fortawesome/fontawesome-svg-core"
+import NotificationBell from '@/components/NotificationBell/NotificationBell.vue';
 
 library.add(faBars, faChevronLeft, faChevronRight)
 
 export default {
     name: 'DashboardLayout',
+    components: {
+        NotificationBell
+    },
     setup() {
         const router = useRouter()
         const authStore = useAuthStore()
+        const cartStore = useCartStore()
+        const { userRole } = storeToRefs(authStore)
+        const { cartItemCount, isActive } = storeToRefs(cartStore)
+
         const isSidebarOpen = ref(true)
         const isMobile = ref(false)
         const mediaQuery = ref(null)
@@ -70,7 +80,13 @@ export default {
 
         onMounted(() => {
             if (!authStore.user) {
-                authStore.fetchUser()
+                authStore.fetchUser().then(() => {
+                    if (authStore.user?.role === 'user') {
+                        cartStore.fetchCart();
+                    }
+                });
+            } else if (authStore.user?.role === 'user') {
+                cartStore.fetchCart();
             }
 
             mediaQuery.value = window.matchMedia('(min-width: 768px)')
@@ -99,7 +115,11 @@ export default {
             isSidebarOpen,
             isMobile,
             toggleSidebar,
-            closeSidebarOnMobile
+            closeSidebarOnMobile,
+            // Cart
+            userRole,
+            cartItemCount,
+            isActive
         }
     }
 }
