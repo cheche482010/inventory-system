@@ -30,7 +30,7 @@
                 <td>{{ budget.items.length }}</td>
                 <td>${{ calculateTotal(budget.items).toFixed(2) }}</td>
                 <td>
-                  <button class="btn btn-sm btn-info me-2" @click="viewBudget(budget)">
+                  <button class="btn btn-sm btn-info me-2 text-white" @click="viewBudget(budget)">
                     <font-awesome-icon icon="eye" /> Ver
                   </button>
                   <button class="btn btn-sm btn-secondary me-2" @click="download(budget.id)">

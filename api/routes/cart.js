@@ -228,9 +228,13 @@ router.post("/submit", async (req, res) => {
         const admins = await User.findAll({
             where: { role: { [Op.in]: ['admin', 'dev'] } }
         });
-        const message = `Nueva solicitud de presupuesto #${cart.id} del usuario ${req.user.firstName}.`;
+        const message = JSON.stringify({
+            title: 'Nueva solicitud de presupuesto',
+            budgetId: cart.id,
+            userName: req.user.firstName
+        });
         for (const admin of admins) {
-            await Notification.create({ userId: admin.id, message, type: 'budget_submitted' });
+            await Notification.create({ userId: admin.id, message, type: 'new_budget' });
         }
 
         successResponse(res, cart, "Solicitud de presupuesto enviada exitosamente");

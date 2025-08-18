@@ -1,0 +1,35 @@
+.notification-item.bg-success-soft {
+  background-color: rgba(25, 135, 84, 0.1);
+}
+
+.notification-item.bg-danger-soft {
+  background-color: rgba(220, 53, 69, 0.1);
+}
+
+.notification-item.bg-info-soft {
+  background-color: rgba(13, 202, 240, 0.1);
+}
+
+.notification-item.bg-secondary-soft {
+  background-color: rgba(108, 117, 125, 0.1);
+}
+
+.dropdown-item.notification-item:active,
+.dropdown-item.notification-item:focus {
+  background-color: inherit;
+  color: inherit;
+}
+
+.dropdown-item.notification-item.fw-bold {
+  font-weight: 600;
+}
+
+.text-wrap {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
+.dropdown-menu {
+  word-wrap: break-word;
+}

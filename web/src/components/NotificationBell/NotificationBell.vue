@@ -19,15 +19,18 @@
         <a v-for="notification in notifications" :key="notification.id"
           class="dropdown-item d-flex align-items-start p-3" :class="getNotificationClass(notification)" href="#"
           @click.prevent="markAsRead(notification)">
-          <div class="me-3">
-            <span class="fa-stack fa-lg" :class="`text-${notificationType(notification.type).color}`">
-              <i class="fas fa-circle fa-stack-2x"></i>
-              <i :class="`fas ${notificationType(notification.type).icon} fa-stack-1x fa-inverse`"></i>
-            </span>
-          </div>
-          <div class="flex-grow-1">
-            <p class="mb-0">{{ notification.message }}</p>
-            <small class="text-muted">{{ new Date(notification.createdAt).toLocaleString() }}</small>
+          <div class="flex-grow-1 text-wrap">
+            <div v-if="parseNotificationMessage(notification.message).budgetId">
+              <div class="mb-1">{{ parseNotificationMessage(notification.message).title }}</div>
+              <div class="mb-1">#{{ parseNotificationMessage(notification.message).budgetId }} usuario: {{
+                parseNotificationMessage(notification.message).userName }}.</div>
+              <small class="text-muted d-block">fecha: {{ new Date(notification.createdAt).toLocaleDateString() }}, hora
+                {{ new Date(notification.createdAt).toLocaleTimeString() }}</small>
+            </div>
+            <div v-else>
+              <div class="mb-1">{{ notification.message }}</div>
+              <small class="text-muted d-block">{{ new Date(notification.createdAt).toLocaleString() }}</small>
+            </div>
           </div>
         </a>
       </div>
@@ -38,90 +41,5 @@
   </div>
 </template>
 
-<script>
-import { onMounted, computed } from 'vue';
-import { useNotificationStore } from '@/stores/notificationStore';
-import { storeToRefs } from 'pinia';
-
-export default {
-  name: 'NotificationBell',
-  setup() {
-    const notificationStore = useNotificationStore();
-    const { notifications, unreadCount, hasUnread } = storeToRefs(notificationStore);
-
-    onMounted(() => {
-      notificationStore.fetchNotifications();
-    });
-
-    const notificationType = (type) => {
-      switch (type) {
-        case 'budget_approved':
-          return { color: 'success', icon: 'fa-check' };
-        case 'budget_rejected':
-          return { color: 'danger', icon: 'fa-times' };
-        case 'new_budget':
-          return { color: 'info', icon: 'fa-file-alt' };
-        default:
-          return { color: 'secondary', icon: 'fa-bell' };
-      }
-    };
-
-    const getNotificationClass = (notification) => {
-      const baseClass = 'notification-item';
-      const color = notificationType(notification.type).color;
-      let statusClass = `bg-${color}-soft`;
-      if (!notification.read) {
-        statusClass += ' fw-bold';
-      }
-      return `${baseClass} ${statusClass}`;
-    };
-
-    const markAsRead = (notification) => {
-      notificationStore.markAsRead(notification);
-    };
-
-    const markAllAsRead = () => {
-      notificationStore.markAllAsRead();
-    };
-
-    return {
-      notifications,
-      unreadCount,
-      hasUnread,
-      notificationType,
-      getNotificationClass,
-      markAsRead,
-      markAllAsRead,
-    };
-  },
-};
-</script>
-
-<style scoped>
-.notification-item.bg-success-soft {
-  background-color: rgba(25, 135, 84, 0.1);
-}
-
-.notification-item.bg-danger-soft {
-  background-color: rgba(220, 53, 69, 0.1);
-}
-
-.notification-item.bg-info-soft {
-  background-color: rgba(13, 202, 240, 0.1);
-}
-
-.notification-item.bg-secondary-soft {
-  background-color: rgba(108, 117, 125, 0.1);
-}
-
-/* Override Bootstrap's active/focus color */
-.dropdown-item.notification-item:active,
-.dropdown-item.notification-item:focus {
-  background-color: inherit;
-  color: inherit;
-}
-
-.dropdown-item.notification-item.fw-bold {
-  font-weight: 600;
-}
-</style>
+<script src="./NotificationBell.js"></script>
+<style scoped src="./NotificationBell.scss"></style>
