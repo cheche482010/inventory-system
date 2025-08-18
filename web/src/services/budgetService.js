@@ -66,14 +66,6 @@ export const budgetService = {
     }
   },
 
-  approve(id) {
-    return api.put(`/budgets/${id}/approve`)
-  },
-
-  reject(id) {
-    return api.put(`/budgets/${id}/reject`)
-  },
-
   async downloadPdf(id) {
     const response = await this.getBudget(id)
     this.generateBudgetPdf(response.data)

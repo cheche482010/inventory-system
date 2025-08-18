@@ -15,14 +15,6 @@ export default {
             budgetStore.fetchBudgets();
         });
 
-        const statusColor = (status) => {
-            const colors = {
-                submitted: 'warning',
-                approved: 'success',
-                rejected: 'danger',
-            };
-            return colors[status] || 'secondary';
-        };
 
         const calculateTotal = (items) => {
             return items.reduce((total, item) => total + (item.price * item.quantity), 0);
@@ -30,20 +22,6 @@ export default {
 
         const viewBudget = (budget) => {
             selectedBudget.value = budget;
-        };
-
-        const approve = (id) => {
-            Swal.fire({
-                title: '¿Aprobar este presupuesto?',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, aprobar',
-                cancelButtonText: 'Cancelar',
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    budgetStore.approveBudget(id);
-                }
-            });
         };
 
         const download = async (budget) => {
@@ -55,30 +33,12 @@ export default {
             }
         };
 
-        const reject = (id) => {
-            Swal.fire({
-                title: '¿Rechazar este presupuesto?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, rechazar',
-                cancelButtonText: 'Cancelar',
-                confirmButtonColor: '#d33',
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    budgetStore.rejectBudget(id);
-                }
-            });
-        };
-
         return {
             budgets,
             loading,
             selectedBudget,
-            statusColor,
             calculateTotal,
             viewBudget,
-            approve,
-            reject,
             download,
         };
     },

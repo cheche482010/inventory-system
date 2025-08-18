@@ -1,4 +1,4 @@
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref } from 'vue';
 import { budgetService } from '@/services/budgetService';
 import Swal from 'sweetalert2';
 
@@ -7,6 +7,7 @@ export default {
     setup() {
         const myBudgets = ref([]);
         const loading = ref(false);
+        const selectedBudget = ref(null);
 
         const fetchMyBudgets = async () => {
             loading.value = true;
@@ -22,28 +23,17 @@ export default {
 
         onMounted(fetchMyBudgets);
 
-        const statusColor = (status) => {
-            const colors = {
-                submitted: 'warning',
-                approved: 'success',
-                rejected: 'danger',
-            };
-            return colors[status] || 'secondary';
-        };
-
         const calculateTotal = (items) => {
             return items.reduce((total, item) => total + (item.price * item.quantity), 0);
         };
 
+        const viewBudget = (budget) => {
+            selectedBudget.value = budget;
+        };
+
         const download = async (id) => {
             try {
-                const response = await budgetService.downloadPdf(id);
-                const blob = new Blob([response.data], { type: 'application/pdf' });
-                const link = document.createElement('a');
-                link.href = window.URL.createObjectURL(blob);
-                link.download = `presupuesto-${id}.pdf`;
-                link.click();
-                window.URL.revokeObjectURL(link.href);
+                await budgetService.downloadPdf(id);
             } catch (error) {
                 console.error('Error al descargar el PDF:', error);
                 Swal.fire('Error', 'No se pudo descargar el PDF.', 'error');
@@ -53,8 +43,9 @@ export default {
         return {
             myBudgets,
             loading,
-            statusColor,
+            selectedBudget,
             calculateTotal,
+            viewBudget,
             download,
         };
     },

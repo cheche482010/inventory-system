@@ -230,7 +230,7 @@ router.post("/submit", async (req, res) => {
         });
         const message = `Nueva solicitud de presupuesto #${cart.id} del usuario ${req.user.firstName}.`;
         for (const admin of admins) {
-            await Notification.create({ userId: admin.id, message });
+            await Notification.create({ userId: admin.id, message, type: 'budget_submitted' });
         }
 
         successResponse(res, cart, "Solicitud de presupuesto enviada exitosamente");

@@ -25,9 +25,7 @@ router.get("/", authorize('admin', 'dev'), async (req, res) => {
     try {
         const budgets = await Cart.findAll({
             where: {
-                status: {
-                    [Op.in]: ['submitted', 'approved', 'rejected']
-                }
+                status: 'submitted'
             },
             include: [
                 { model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email'] },
@@ -58,9 +56,7 @@ router.get("/my", async (req, res) => {
         const budgets = await Cart.findAll({
             where: {
                 userId: req.user.id,
-                status: {
-                    [Op.in]: ['submitted', 'approved', 'rejected']
-                }
+                status: 'submitted'
             },
             include: [
                 { model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email'] },
@@ -74,93 +70,6 @@ router.get("/my", async (req, res) => {
     }
 });
 
-/**
- * @swagger
- * /budgets/{id}/approve:
- *   put:
- *     summary: Aprobar una solicitud de presupuesto
- *     tags: [Budgets]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Presupuesto aprobado
- */
-router.put("/:id/approve", authorize('admin', 'dev'), async (req, res) => {
-    try {
-        const cart = await Cart.findOne({
-            where: { id: req.params.id, status: 'submitted' },
-            include: [
-                { model: User, as: 'user' },
-                { model: CartItem, as: 'items', include: [{ model: Product, as: 'product' }] }
-            ]
-        });
-
-        if (!cart) {
-            return errorResponse(res, "Solicitud de presupuesto no encontrada o ya procesada", 404);
-        }
-
-        cart.status = 'approved';
-        await cart.save();
-
-        // Notify user
-        const message = `Tu solicitud de presupuesto #${cart.id} ha sido aprobada.`;
-        await Notification.create({ userId: cart.userId, message, type: 'budget_approved' });
-
-        // Send email
-        await sendBudgetEmail(cart.user, cart);
-
-        successResponse(res, cart, "Presupuesto aprobado y email enviado");
-    } catch (error) {
-        console.error(error);
-        errorResponse(res, "Error al aprobar el presupuesto");
-    }
-});
-
-/**
- * @swagger
- * /budgets/{id}/reject:
- *   put:
- *     summary: Rechazar una solicitud de presupuesto
- *     tags: [Budgets]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Presupuesto rechazado
- */
-router.put("/:id/reject", authorize('admin', 'dev'), async (req, res) => {
-    try {
-        const cart = await Cart.findOne({ where: { id: req.params.id, status: 'submitted' } });
-
-        if (!cart) {
-            return errorResponse(res, "Solicitud de presupuesto no encontrada o ya procesada", 404);
-        }
-
-        cart.status = 'rejected';
-        await cart.save();
-
-        // Notify user
-        const message = `Tu solicitud de presupuesto #${cart.id} ha sido rechazada.`;
-        await Notification.create({ userId: cart.userId, message, type: 'budget_rejected' });
-
-        successResponse(res, cart, "Presupuesto rechazado");
-    } catch (error) {
-        errorResponse(res, "Error al rechazar el presupuesto");
-    }
-});
 
 /**
  * @swagger

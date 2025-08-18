@@ -20,29 +20,5 @@ export const useBudgetStore = defineStore('budgets', {
                 this.loading = false;
             }
         },
-        async approveBudget(id) {
-            this.loading = true;
-            try {
-                await budgetService.approve(id);
-                this.toast.success('Presupuesto aprobado');
-                this.fetchBudgets(); // Refresh the list
-            } catch (error) {
-                this.toast.error('Error al aprobar el presupuesto');
-            } finally {
-                this.loading = false;
-            }
-        },
-        async rejectBudget(id) {
-            this.loading = true;
-            try {
-                await budgetService.reject(id);
-                this.toast.warning('Presupuesto rechazado');
-                this.fetchBudgets(); // Refresh the list
-            } catch (error) {
-                this.toast.error('Error al rechazar el presupuesto');
-            } finally {
-                this.loading = false;
-            }
-        },
     },
 });

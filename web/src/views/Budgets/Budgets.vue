@@ -19,7 +19,6 @@
                 <th>ID</th>
                 <th>Usuario</th>
                 <th>Fecha</th>
-                <th>Estado</th>
                 <th>Items</th>
                 <th>Total</th>
                 <th>Acciones</th>
@@ -30,9 +29,6 @@
                 <td>#{{ budget.id }}</td>
                 <td>{{ budget.user.firstName }} {{ budget.user.lastName }}</td>
                 <td>{{ new Date(budget.updatedAt).toLocaleDateString() }}</td>
-                <td>
-                  <span :class="`badge bg-${statusColor(budget.status)}`">{{ budget.status }}</span>
-                </td>
                 <td>{{ budget.items.length }}</td>
                 <td>${{ calculateTotal(budget.items).toFixed(2) }}</td>
                 <td>
@@ -42,14 +38,6 @@
                   <button class="btn btn-sm btn-secondary me-2" @click="download(budget)">
                     <font-awesome-icon icon="file-pdf" /> PDF
                   </button>
-                  <template v-if="budget.status === 'submitted'">
-                    <button class="btn btn-sm btn-success me-2" @click="approve(budget.id)">
-                      <font-awesome-icon icon="check" /> Aprobar
-                    </button>
-                    <button class="btn btn-sm btn-danger" @click="reject(budget.id)">
-                      <font-awesome-icon icon="times" /> Rechazar
-                    </button>
-                  </template>
                 </td>
               </tr>
             </tbody>

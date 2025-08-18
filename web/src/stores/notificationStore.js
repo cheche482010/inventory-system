@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { notificationService } from '@/services/notificationService';
+import { useAuthStore } from './auth';
 
 export const useNotificationStore = defineStore('notifications', {
     state: () => ({
@@ -18,8 +19,16 @@ export const useNotificationStore = defineStore('notifications', {
         async fetchNotifications() {
             this.loading = true;
             try {
+                const authStore = useAuthStore();
+                const user = authStore.user;
                 const response = await notificationService.getAll();
-                this.notifications = response.data;
+                let notifications = response.data;
+
+                if (user && user.role !== 'admin' && user.role !== 'dev') {
+                    notifications = notifications.filter(n => !n.type?.startsWith('budget_'));
+                }
+
+                this.notifications = notifications;
             } catch (error) {
                 console.error('Error fetching notifications:', error);
             } finally {
