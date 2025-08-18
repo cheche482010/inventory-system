@@ -4,7 +4,6 @@ const { successResponse, errorResponse } = require("../helpers/responseHelper");
 const { sendBudgetEmail } = require("../helpers/mailHelper");
 const { Cart, CartItem, Product, User, Notification } = require("../models");
 const { Op } = require("sequelize");
-const { generateBudgetPdf } = require('../helpers/pdfHelper');
 
 const router = express.Router();
 
@@ -165,9 +164,9 @@ router.put("/:id/reject", authorize('admin', 'dev'), async (req, res) => {
 
 /**
  * @swagger
- * /budgets/{id}/pdf:
+ * /budgets/{id}:
  *   get:
- *     summary: Descargar un presupuesto en PDF
+ *     summary: Obtener un presupuesto por ID
  *     tags: [Budgets]
  *     security:
  *       - bearerAuth: []
@@ -179,14 +178,9 @@ router.put("/:id/reject", authorize('admin', 'dev'), async (req, res) => {
  *           type: integer
  *     responses:
  *       200:
- *         description: Archivo PDF del presupuesto
- *         content:
- *           application/pdf:
- *             schema:
- *               type: string
- *               format: binary
+ *         description: Datos del presupuesto
  */
-router.get("/:id/pdf", async (req, res) => {
+router.get("/:id", async (req, res) => {
     try {
         const cart = await Cart.findOne({
             where: { id: req.params.id },
@@ -208,14 +202,11 @@ router.get("/:id/pdf", async (req, res) => {
             return errorResponse(res, "Permisos insuficientes", 403);
         }
 
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=presupuesto-${cart.id}.pdf`);
-        
-        generateBudgetPdf(cart, res);
+        successResponse(res, cart);
 
     } catch (error) {
-        console.error("Error al generar el PDF:", error);
-        errorResponse(res, "Error al generar el PDF");
+        console.error("Error al obtener el presupuesto:", error);
+        errorResponse(res, "Error al obtener el presupuesto");
     }
 });
 

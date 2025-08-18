@@ -46,16 +46,11 @@ export default {
             });
         };
 
-        const download = async (id) => {
+        const download = async (budget) => {
             try {
-                const response = await budgetService.downloadPdf(id);
-                const blob = new Blob([response.data], { type: 'application/pdf' });
-                const link = document.createElement('a');
-                link.href = window.URL.createObjectURL(blob);
-                link.download = `presupuesto-${id}.pdf`;
-                link.click();
-                window.URL.revokeObjectURL(link.href);
+                budgetService.generateBudgetPdf(budget);
             } catch (error) {
+                console.error('Error al descargar el PDF:', error);
                 Swal.fire('Error', 'No se pudo descargar el PDF.', 'error');
             }
         };

@@ -45,6 +45,7 @@ export default {
                 link.click();
                 window.URL.revokeObjectURL(link.href);
             } catch (error) {
+                console.error('Error al descargar el PDF:', error);
                 Swal.fire('Error', 'No se pudo descargar el PDF.', 'error');
             }
         };
