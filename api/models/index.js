@@ -31,9 +31,8 @@ db.ActivityLog = require("./ActivityLog")(sequelize, Sequelize.DataTypes)
 db.Permission = require("./Permission")(sequelize, Sequelize.DataTypes)
 db.UserPermission = require("./UserPermission")(sequelize, Sequelize.DataTypes)
 db.Notification = require("./notification")(sequelize, Sequelize.DataTypes)
-db.Cart = require("./cart")(sequelize, Sequelize.DataTypes)
-db.CartItem = require("./cartitem")(sequelize, Sequelize.DataTypes)
-db.Notification = require("./notification")(sequelize, Sequelize.DataTypes)
+db.Cart = require("./Cart")(sequelize, Sequelize.DataTypes)
+db.CartItem = require("./CartItem")(sequelize, Sequelize.DataTypes)
 
 
 // Define associations
