@@ -25,6 +25,18 @@ const routes = [
         component: () => import("@/views/Products/Products.vue"),
       },
       {
+        path: "/cart",
+        name: "Cart",
+        component: () => import("@/views/Cart/Cart.vue"),
+        meta: { requiresRole: ["user"] },
+      },
+      {
+        path: "/my-requests",
+        name: "MyRequests",
+        component: () => import("@/views/MyRequests/MyRequests.vue"),
+        meta: { requiresRole: ["user"] },
+      },
+      {
         path: "/brands",
         name: "Brands",
         component: () => import("@/views/Brands/Brands.vue"),
@@ -59,6 +71,12 @@ const routes = [
         name: "Import",
         component: () => import("@/views/Import/Import.vue"),
         meta: { requiresRole: ["dev"] },
+      },
+      {
+        path: "/budgets",
+        name: "Budgets",
+        component: () => import("@/views/Budgets/Budgets.vue"),
+        meta: { requiresRole: ["admin", "dev"] },
       },
     ],
   },

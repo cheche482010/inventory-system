@@ -62,39 +62,12 @@ module.exports = (sequelize, DataTypes) => {
   }
 
   User.prototype.hasPermission = async function (resource, action) {
-    // Los dev tienen todos los permisos
     if (this.role === "dev") return true
 
-    // Los admin tienen permisos específicos
-    if (this.role === "admin") {
-      const adminPermissions = [
-        "products:read",
-        "products:create",
-        "products:update",
-        "products:export",
-        "brands:read",
-        "brands:create",
-        "brands:update",
-        "categories:read",
-        "categories:create",
-        "categories:update",
-        "users:read",
-        "users:create",
-        "users:update",
-        "activities:read",
-        "dashboard:read",
-        "import:create", // Permiso futuro
-      ]
-      return adminPermissions.includes(`${resource}:${action}`)
-    }
+    const requiredPermission = `${resource}:${action}`
+    const userPermissions = await this.getPermissions()
 
-    // Los users solo pueden leer productos
-    if (this.role === "user") {
-      const userPermissions = ["products:read"]
-      return userPermissions.includes(`${resource}:${action}`)
-    }
-
-    return false
+    return userPermissions.some((p) => p.name === requiredPermission)
   }
 
   User.associate = (models) => {
@@ -105,6 +78,10 @@ module.exports = (sequelize, DataTypes) => {
       otherKey: "permissionId",
       as: "permissions",
     })
+    User.hasMany(models.Cart, {
+      foreignKey: 'userId',
+      as: 'carts'
+    });
   }
 
   return User

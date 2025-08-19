@@ -73,6 +73,10 @@
             </div>
           </div>
           <div class="modal-footer">
+            <button v-if="canManagePermissions" type="button" class="btn btn-info text-white me-auto" @click="openPermissionsModal">
+              <font-awesome-icon icon="key" class="me-1" />
+              Gestionar Permisos
+            </button>
             <button type="button" class="btn btn-secondary" @click="$emit('close')">
               Cancelar
             </button>
@@ -85,6 +89,13 @@
       </div>
     </div>
   </div>
+  
+  <UserPermissionsModal 
+    v-if="showPermissionsModal && userForPermissions" 
+    :user-id="userForPermissions.id" 
+    :user-name="`${userForPermissions.firstName} ${userForPermissions.lastName}`"
+    @close="closePermissionsModal" 
+  />
 </template>
 
 <script src="./UserModal.js"></script>

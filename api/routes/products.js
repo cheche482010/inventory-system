@@ -1,11 +1,14 @@
 const express = require("express")
 const { body, query } = require("express-validator")
 const { Product, Brand, Category } = require("../models")
-const { authenticateToken, authorize } = require("../middleware/auth")
+const { authenticateToken, authorize, checkPermission } = require("../middleware/auth")
 const { logActivity } = require("../middleware/activityLogger")
 const { successResponse, errorResponse, paginatedResponse } = require("../helpers/responseHelper")
 const { handleValidationErrors } = require("../helpers/validationHelper")
 const { Op } = require("sequelize")
+const upload = require("../middleware/upload")
+const fs = require("fs")
+const path = require("path")
 
 const router = express.Router()
 
@@ -50,9 +53,9 @@ const router = express.Router()
 router.get("/", authenticateToken, async (req, res) => {
   try {
     const page = Number.parseInt(req.query.page) || 1
-    const limit = Number.parseInt(req.query.limit) || 10
-    const offset = (page - 1) * limit
-    const { search, status, brandId, categoryId } = req.query
+    const limit = req.query.limit === 'all' ? null : (Number.parseInt(req.query.limit) || 10)
+    const offset = limit ? (page - 1) * limit : 0
+    const { search, status, brandId, categoryId, sortBy, sortOrder } = req.query
 
     const where = { isActive: true }
 
@@ -64,26 +67,43 @@ router.get("/", authenticateToken, async (req, res) => {
     if (brandId) where.brandId = brandId
     if (categoryId) where.categoryId = categoryId
 
-    const { count, rows } = await Product.findAndCountAll({
+    let order = [["name", "ASC"]]
+    if (sortBy && sortOrder) {
+      if (sortBy === 'brand.name') {
+        order = [[{ model: Brand, as: 'brand' }, 'name', sortOrder]]
+      } else if (sortBy === 'category.name') {
+        order = [[{ model: Category, as: 'category' }, 'name', sortOrder]]
+      } else {
+        order = [[sortBy, sortOrder]]
+      }
+    }
+
+    const queryOptions = {
       where,
       include: [
         { model: Brand, as: "brand", attributes: ["id", "name"] },
         { model: Category, as: "category", attributes: ["id", "name"] },
       ],
-      limit,
-      offset,
-      order: [["createdAt", "DESC"]],
-    })
+      order,
+    }
+
+    if (limit) {
+      queryOptions.limit = limit
+      queryOptions.offset = offset
+    }
+
+    const { count, rows } = await Product.findAndCountAll(queryOptions)
 
     const pagination = {
       currentPage: page,
-      totalPages: Math.ceil(count / limit),
+      totalPages: limit ? Math.ceil(count / limit) : 1,
       totalItems: count,
-      itemsPerPage: limit,
+      itemsPerPage: limit || count,
     }
 
     paginatedResponse(res, rows, pagination)
   } catch (error) {
+    console.log(error)
     errorResponse(res, "Error al obtener productos")
   }
 })
@@ -165,7 +185,8 @@ router.post(
   "/",
   [
     authenticateToken,
-    authorize("admin", "dev"),
+    checkPermission("products", "create"),
+    upload.single("imagen"), // Multer middleware for single file upload
     body("code").notEmpty().withMessage("Código requerido"),
     body("name").notEmpty().withMessage("Nombre requerido"),
     body("price").isFloat({ min: 0 }).withMessage("Precio debe ser mayor a 0"),
@@ -177,7 +198,13 @@ router.post(
   logActivity("CREATE", "PRODUCT"),
   async (req, res) => {
     try {
-      const product = await Product.create(req.body)
+      const productData = { ...req.body }
+      if (req.file) {
+        // Guardar solo la ruta relativa
+        productData.imagen = `products/${req.file.filename}`
+      }
+
+      const product = await Product.create(productData)
       const productWithRelations = await Product.findByPk(product.id, {
         include: [
           { model: Brand, as: "brand" },
@@ -217,11 +244,14 @@ router.put(
   "/:id",
   [
     authenticateToken,
-    authorize("admin", "dev"),
+    checkPermission("products", "update"),
+    upload.single("imagen"), // Multer middleware for single file upload
     body("code").optional().notEmpty().withMessage("Código no puede estar vacío"),
     body("name").optional().notEmpty().withMessage("Nombre no puede estar vacío"),
     body("price").optional().isFloat({ min: 0 }).withMessage("Precio debe ser mayor a 0"),
     body("status").optional().isIn(["disponible", "nuevo", "oferta", "agotado"]).withMessage("Estado inválido"),
+    body("brandId").optional().isInt().withMessage("Marca requerida"),
+    body("categoryId").optional().isInt().withMessage("Categoría requerida"),
   ],
   handleValidationErrors,
   logActivity("UPDATE", "PRODUCT"),
@@ -235,7 +265,20 @@ router.put(
         return errorResponse(res, "Producto no encontrado", 404)
       }
 
-      await product.update(req.body)
+      const productData = { ...req.body }
+
+      if (req.file) {
+        // Si se sube una nueva imagen, eliminar la anterior si existe
+        if (product.imagen) {
+          const oldImagePath = path.join(__dirname, "..", "uploads", product.imagen)
+          if (fs.existsSync(oldImagePath)) {
+            fs.unlinkSync(oldImagePath)
+          }
+        }
+        productData.imagen = `products/${req.file.filename}`
+      }
+
+      await product.update(productData)
 
       const updatedProduct = await Product.findByPk(product.id, {
         include: [
@@ -269,7 +312,7 @@ router.put(
  *       200:
  *         description: Producto eliminado
  */
-router.delete("/:id", [authenticateToken, authorize("dev")], logActivity("DELETE", "PRODUCT"), async (req, res) => {
+router.delete("/:id", [authenticateToken, checkPermission("products", "delete")], logActivity("DELETE", "PRODUCT"), async (req, res) => {
   try {
     const product = await Product.findOne({
       where: { id: req.params.id, isActive: true },

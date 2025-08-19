@@ -65,6 +65,10 @@
           </div>
         </div>
         <div class="modal-footer">
+          <button type="button" class="btn btn-info text-white me-auto" @click="openPermissionsModal">
+            <font-awesome-icon icon="key" class="me-1" />
+            Ver Permisos
+          </button>
           <button type="button" class="btn btn-secondary" @click="$emit('close')">
             Cerrar
           </button>
@@ -72,6 +76,13 @@
       </div>
     </div>
   </div>
+  
+  <UserPermissionsModal 
+    v-if="showPermissionsModal" 
+    :user-id="user.id" 
+    :user-name="`${user.firstName} ${user.lastName}`"
+    @close="closePermissionsModal" 
+  />
 </template>
 
 <script src="./UserViewModal.js"></script>

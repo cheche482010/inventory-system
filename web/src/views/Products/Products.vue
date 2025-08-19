@@ -11,65 +11,12 @@
     </div>
 
     <!-- Filters -->
-    <div class="card mb-4">
-      <div class="card-body">
-        <div class="row g-3">
-          <div class="col-md-3">
-            <label class="form-label">Buscar</label>
-            <input type="text" class="form-control" placeholder="Código o nombre..." v-model="filters.search"
-              @input="debouncedSearch" />
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">Mostrar</label>
-            <select class="form-select" v-model="filters.perPage" @change="applyFilters">
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="50">50</option>
-              <option value="all">Todas</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">Estado</label>
-            <select class="form-select" v-model="filters.status" @change="applyFilters">
-              <option value="">Todos</option>
-              <option value="disponible">Disponible</option>
-              <option value="nuevo">Nuevo</option>
-              <option value="oferta">Oferta</option>
-              <option value="agotado">Agotado</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">Marca</label>
-            <select class="form-select" v-model="filters.brandId" @change="applyFilters">
-              <option value="">Todas</option>
-              <option v-for="brand in brands" :key="brand.id" :value="brand.id">
-                {{ brand.name }}
-              </option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Categoría</label>
-            <select class="form-select" v-model="filters.categoryId" @change="applyFilters">
-              <option value="">Todas</option>
-              <option v-for="category in categories" :key="category.id" :value="category.id">
-                {{ category.name }}
-              </option>
-            </select>
-          </div>
-        </div>
-        <div class="row mt-3">
-          <div class="col-6 col-md-2">
-            <button @click="clearFilters" class="btn btn-outline-secondary">
-              <font-awesome-icon icon="eraser" class="me-2" />
-              Limpiar
-            </button>
-          </div>
-          <div class="col-6 col-md-2 ms-md-auto">
-            <ExportDropdown v-if="canExport" :products="products" :filters="filters" />
-          </div>
-        </div>
-      </div>
-    </div>
+    <FilterSection v-model="filters" :config="filterConfig" search-placeholder="Código o nombre..."
+      @filter="applyFilters" @clear="clearFilters">
+      <template #extra-buttons>
+        <ExportDropdown v-if="canExport" :products="products" :filters="filters" />
+      </template>
+    </FilterSection>
 
     <!-- Products Table -->
     <div class="card">
@@ -84,25 +31,65 @@
             <table class="table">
               <thead>
                 <tr>
-                  <th>Código</th>
-                  <th>Nombre</th>
-                  <th>Marca</th>
-                  <th>Categoría</th>
-                  <th>Estado</th>
-                  <th>Precio</th>
+                  <th>#</th>
+                  <th>Imagen</th>
+                  <th @click="sort('code')" class="sortable">
+                    Código
+                    <font-awesome-icon v-if="filters.sortBy === 'code'"
+                      :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                    <font-awesome-icon v-else icon="sort" class="text-muted" />
+                  </th>
+                  <th @click="sort('name')" class="sortable">
+                    Nombre
+                    <font-awesome-icon v-if="filters.sortBy === 'name'"
+                      :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                    <font-awesome-icon v-else icon="sort" class="text-muted" />
+                  </th>
+                  <th @click="sort('brand.name')" class="sortable">
+                    Marca
+                    <font-awesome-icon v-if="filters.sortBy === 'brand.name'"
+                      :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                    <font-awesome-icon v-else icon="sort" class="text-muted" />
+                  </th>
+                  <th @click="sort('category.name')" class="sortable">
+                    Categoría
+                    <font-awesome-icon v-if="filters.sortBy === 'category.name'"
+                      :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                    <font-awesome-icon v-else icon="sort" class="text-muted" />
+                  </th>
+                  <th @click="sort('status')" class="sortable">
+                    Estado
+                    <font-awesome-icon v-if="filters.sortBy === 'status'"
+                      :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                    <font-awesome-icon v-else icon="sort" class="text-muted" />
+                  </th>
+                  <th @click="sort('price')" class="sortable">
+                    Precio
+                    <font-awesome-icon v-if="filters.sortBy === 'price'"
+                      :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                    <font-awesome-icon v-else icon="sort" class="text-muted" />
+                  </th>
                   <th>Acciones</th>
+                  <th v-if="userRole === 'user'">Comprar</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-if="hasNoResults">
-                  <td colspan="7" class="text-center py-4">
+                  <td colspan="8" class="text-center py-4">
                     <div class="alert alert-info">
                       <font-awesome-icon icon="exclamation-triangle" class="me-2" />
                       No se encontraron productos que coincidan con los filtros aplicados.
                     </div>
                   </td>
                 </tr>
-                <tr v-for="product in products" :key="product.id" v-else>
+                <tr v-for="(product, index) in products" :key="product.id" v-else>
+                  <td>{{ (pagination.currentPage - 1) * (filters.perPage === 'all' ? products.length :
+                    parseInt(filters.perPage)) + index + 1 }}</td>
+                  <td>
+                    <img v-if="product.imagen" :src="`${baseUrl}/uploads/${product.imagen}`" :alt="product.name"
+                      class="product-image img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
+                    <span v-else class="text-muted small">Sin imagen</span> 
+                  </td>
                   <td>{{ product.code }}</td>
                   <td>{{ product.name.substring(0, 60) }}...</td>
                   <td>{{ product.brand?.name }}</td>
@@ -128,32 +115,24 @@
                       </button>
                     </div>
                   </td>
+                  <td v-if="userRole === 'user'">
+                    <div v-if="product.status !== 'agotado'" class="d-flex" style="width: 150px;">
+                      <input type="number" class="form-control form-control-sm me-2"
+                        v-model.number="quantities[product.id]" min="1" />
+                      <button class="btn btn-sm btn-success" @click="addToCart(product)" title="Añadir al carrito">
+                        <font-awesome-icon icon="cart-plus" />
+                      </button>
+                    </div>
+                    <span v-else class="text-muted small">Agotado</span>
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <!-- Pagination -->
-          <nav v-if="showPagination && pagination.totalPages > 1">
-            <ul class="pagination justify-content-center  mt-3">
-              <li class="page-item" :class="{ disabled: pagination.currentPage === 1 }">
-                <button class="page-link" @click="changePage(pagination.currentPage - 1)">
-                  Anterior
-                </button>
-              </li>
-              <li v-for="page in visiblePages" :key="page" class="page-item"
-                :class="{ active: page === pagination.currentPage }">
-                <button class="page-link" @click="changePage(page)">
-                  {{ page }}
-                </button>
-              </li>
-              <li class="page-item" :class="{ disabled: pagination.currentPage === pagination.totalPages }">
-                <button class="page-link" @click="changePage(pagination.currentPage + 1)">
-                  Siguiente
-                </button>
-              </li>
-            </ul>
-          </nav>
+          <Pagination v-if="showPagination && pagination.totalPages > 1" :current-page="pagination.currentPage"
+            :total-pages="pagination.totalPages" @page-changed="changePage" />
         </div>
       </div>
     </div>

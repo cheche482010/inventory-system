@@ -2,12 +2,14 @@
 
 import { defineStore } from "pinia"
 import { authService } from "@/services/authService"
+import { userPermissionService } from "@/services/userPermissionService"
 import { useToast } from "vue-toastification"
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
     user: null,
     token: localStorage.getItem("token"),
+    permissions: [],
     loading: false,
     toast: useToast(),
   }),
@@ -16,16 +18,11 @@ export const useAuthStore = defineStore("auth", {
     isAuthenticated: (state) => !!state.token,
     userRole: (state) => state.user?.role,
 
-    // Permisos basados en rol
-    canCreate: (state) => ["admin", "dev"].includes(state.user?.role),
-    canDelete: (state) => state.user?.role === "dev",
-    canExportPdf: (state) => state.user?.role === "admin",
-    canViewUsers: (state) => ["admin", "dev"].includes(state.user?.role),
-    canViewActivities: (state) => ["admin", "dev"].includes(state.user?.role),
-    canViewPermissions: (state) => state.user?.role === "dev",
-    canViewDashboard: (state) => ["admin", "dev"].includes(state.user?.role),
-    canImport: (state) => ["dev"].includes(state.user?.role),
-    canExport: (state) => ["admin", "dev"].includes(state.user?.role),
+    // Permisos basados en la base de datos
+    hasPermission: (state) => (permissionName) => {
+      if (state.user?.role === 'dev') return true;
+      return state.permissions.some(p => p.name === permissionName);
+    },
     
     // Ruta inicial basada en rol
     initialRoute: (state) => {
@@ -51,6 +48,7 @@ export const useAuthStore = defineStore("auth", {
         this.token = response.data.token
         this.user = response.data.user
         localStorage.setItem("token", this.token)
+        await this.fetchPermissions()
         this.toast.success("Inicio de sesión exitoso")
         return response
       } catch (error) {
@@ -67,14 +65,26 @@ export const useAuthStore = defineStore("auth", {
       try {
         const response = await authService.me()
         this.user = response.data
+        await this.fetchPermissions()
       } catch (error) {
         this.logout()
+      }
+    },
+
+    async fetchPermissions() {
+      if (!this.user) return
+      try {
+        const response = await userPermissionService.getPermissions(this.user.id)
+        this.permissions = response.data
+      } catch (error) {
+        this.toast.error("Error al obtener permisos")
       }
     },
 
     logout() {
       this.user = null
       this.token = null
+      this.permissions = []
       localStorage.removeItem("token")
       this.toast.info("Sesión cerrada")
     },

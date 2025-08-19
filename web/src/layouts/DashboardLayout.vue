@@ -37,6 +37,18 @@
               <span v-if="isSidebarOpen">Productos</span>
             </router-link>
           </li>
+          <li class="nav-item mb-2" v-if="userRole === 'user'">
+            <router-link to="/my-requests" class="nav-link" active-class="active" @click="closeSidebarOnMobile">
+              <font-awesome-icon icon="receipt" :class="{ 'me-2': isSidebarOpen }" />
+              <span v-if="isSidebarOpen">Mis Solicitudes</span>
+            </router-link>
+          </li>
+          <li class="nav-item mb-2" v-if="userRole === 'admin' || userRole === 'dev'">
+            <router-link to="/budgets" class="nav-link" active-class="active" @click="closeSidebarOnMobile">
+              <font-awesome-icon icon="file-invoice-dollar" :class="{ 'me-2': isSidebarOpen }" />
+              <span v-if="isSidebarOpen">Presupuestos</span>
+            </router-link>
+          </li>
           <li class="nav-item mb-2" v-if="canCreate">
             <router-link to="/brands" class="nav-link" active-class="active" @click="closeSidebarOnMobile">
               <font-awesome-icon icon="tags" :class="{ 'me-2': isSidebarOpen }" />
@@ -63,7 +75,7 @@
           </li>
           <li class="nav-item mb-2" v-if="canViewPermissions">
             <router-link to="/permissions" class="nav-link" active-class="active" @click="closeSidebarOnMobile">
-              <font-awesome-icon icon="shield-alt" :class="{ 'me-2': isSidebarOpen }" />
+              <font-awesome-icon icon="shield-halved" :class="{ 'me-2': isSidebarOpen }" />
               <span v-if="isSidebarOpen">Permisos</span>
             </router-link>
           </li>
@@ -96,7 +108,19 @@
         </button>
         <span class="navbar-brand mb-0 h1 ms-3 d-none d-md-block">Panel de Administración</span>
         <div class="ms-auto d-flex align-items-center">
-          <span class="me-2 d-none d-sm-block text-muted">Hola, {{ user?.firstName }}!</span>
+          <!-- Notifications -->
+          <NotificationBell />
+
+          <!-- Cart Icon -->
+          <router-link to="/cart" v-if="userRole === 'user' && isActive"
+            class="btn btn-outline-primary me-3 position-relative">
+            <font-awesome-icon icon="shopping-cart" />
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+              {{ cartItemCount }}
+              <span class="visually-hidden">items in cart</span>
+            </span>
+          </router-link>
+
           <button @click="logout" class="btn btn-sm btn-outline-danger d-none d-md-block">
             <font-awesome-icon icon="sign-out-alt" class="me-2" />
             Salir

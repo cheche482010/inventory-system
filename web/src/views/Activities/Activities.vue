@@ -38,6 +38,7 @@
             <table class="table">
               <thead>
                 <tr>
+                  <th>#</th>
                   <th>Fecha</th>
                   <th>Usuario</th>
                   <th>Acción</th>
@@ -55,7 +56,8 @@
                     </div>
                   </td>
                 </tr>
-                <tr v-for="activity in activities" :key="activity.id">
+                <tr v-for="(activity, index) in activities" :key="activity.id">
+                  <td>{{ getRowNumber(index) }}</td>
                   <td>{{ formatDate(activity.createdAt) }}</td>
                   <td>
                     <div>
@@ -86,26 +88,8 @@
           </div>
 
           <!-- Pagination -->
-          <nav v-if="pagination.totalPages > 1">
-            <ul class="pagination justify-content-center mt-3">
-              <li class="page-item" :class="{ disabled: pagination.currentPage === 1 }">
-                <button class="page-link" @click="changePage(pagination.currentPage - 1)">
-                  Anterior
-                </button>
-              </li>
-              <li v-for="page in visiblePages" :key="page" class="page-item"
-                :class="{ active: page === pagination.currentPage }">
-                <button class="page-link" @click="changePage(page)">
-                  {{ page }}
-                </button>
-              </li>
-              <li class="page-item" :class="{ disabled: pagination.currentPage === pagination.totalPages }">
-                <button class="page-link" @click="changePage(pagination.currentPage + 1)">
-                  Siguiente
-                </button>
-              </li>
-            </ul>
-          </nav>
+          <Pagination v-if="pagination.totalPages > 1" :current-page="pagination.currentPage"
+            :total-pages="pagination.totalPages" @page-changed="changePage" />
         </div>
       </div>
     </div>

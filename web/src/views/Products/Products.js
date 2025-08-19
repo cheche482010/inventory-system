@@ -1,176 +1,230 @@
-import { ref, computed, onMounted, watch } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { useProductStore } from '@/stores/products'
-import { brandService } from '@/services/brandService'
-import { categoryService } from '@/services/categoryService'
-import { useToast } from 'vue-toastification'
-import ProductModal from '@/components/Products/ProductModal/ProductModal.vue'
-import ProductForm from '@/components/Products/ProductForm/ProductForm.vue'
-import ExportDropdown from '@/components/Products/ExportDropdown/ExportDropdown.vue'
-
-let searchTimeout
+import { ref, computed, onMounted, watch } from 'vue';
+import Swal from 'sweetalert2';
+import { useAuthStore } from '@/stores/auth';
+import { useProductStore } from '@/stores/products';
+import { useCartStore } from '@/stores/cart';
+import { brandService } from '@/services/brandService';
+import { categoryService } from '@/services/categoryService';
+import ProductModal from '@/components/Products/ProductModal/ProductModal.vue';
+import ProductForm from '@/components/Products/ProductForm/ProductForm.vue';
+import ExportDropdown from '@/components/Products/ExportDropdown/ExportDropdown.vue';
+import Pagination from '@/components/Pagination/Pagination.vue';
+import FilterSection from '@/components/FilterSection/FilterSection.vue';
+import { storeToRefs } from 'pinia';
 
 export default {
-    name: 'Products',
-    components: {
-        ProductModal,
-        ProductForm,
-        ExportDropdown
-    },
-    setup() {
-        const authStore = useAuthStore()
-        const productStore = useProductStore()
-        const toast = useToast()
+  name: 'Products',
+  components: {
+    ProductModal,
+    ProductForm,
+    ExportDropdown,
+    Pagination,
+    FilterSection,
+  },
+  setup() {
+    const authStore = useAuthStore();
+    const productStore = useProductStore();
+    const cartStore = useCartStore();
 
-        const brands = ref([])
-        const categories = ref([])
-        const selectedProduct = ref(null)
-        const showProductForm = ref(false)
-        const editingProduct = ref(null)
+    const { products, loading, pagination, filters, hasNoResults, showPagination } = storeToRefs(productStore);
+    const { userRole } = storeToRefs(authStore);
 
-        const products = computed(() => productStore.products)
-        const loading = computed(() => productStore.loading)
-        const pagination = computed(() => productStore.pagination)
-        const filters = computed(() => productStore.filters)
+    const quantities = ref({});
 
-        const canCreate = computed(() => authStore.canCreate)
-        const canDelete = computed(() => authStore.canDelete)
-        const canExport = computed(() => authStore.canExport)
-
-        const visiblePages = computed(() => {
-            const current = pagination.value.currentPage
-            const total = pagination.value.totalPages
-            const pages = []
-
-            for (let i = Math.max(1, current - 2); i <= Math.min(total, current + 2); i++) {
-                pages.push(i)
-            }
-
-            return pages
-        })
-
-        const hasNoResults = computed(() => {
-            return products.value.length === 0 && !loading.value
-        })
-
-        const loadData = async () => {
-            await Promise.all([
-                productStore.fetchProducts(),
-                loadBrands(),
-                loadCategories()
-            ])
+    // Watch for products changes to initialize quantities
+    watch(products, (newProducts) => {
+      newProducts.forEach(p => {
+        if (quantities.value[p.id] === undefined) {
+          quantities.value[p.id] = 1;
         }
+      });
+    }, { deep: true });
 
-        const loadBrands = async () => {
-            try {
-                const response = await brandService.getAll()
-                brands.value = response.data
-            } catch (error) {
-                console.error('Error loading brands:', error)
-            }
+    const addToCart = (product) => {
+      const quantity = quantities.value[product.id];
+      if (quantity > 0) {
+        cartStore.addItem({
+          productId: product.id,
+          quantity: quantity,
+        });
+      }
+    };
+
+    const brands = ref([]);
+    const categories = ref([]);
+    const selectedProduct = ref(null);
+    const showProductForm = ref(false);
+    const editingProduct = ref(null);
+
+    const canCreate = computed(() => authStore.hasPermission('products:create'));
+    const canDelete = computed(() => authStore.hasPermission('products:delete'));
+    const canExport = computed(() => authStore.hasPermission('products:export'));
+
+    const loadBrands = async () => {
+      try {
+        const response = await brandService.getAllBrands();
+        brands.value = response.data;
+      } catch (error) {
+        console.error('Error loading brands:', error);
+      }
+    };
+
+    const loadCategories = async () => {
+      try {
+        const response = await categoryService.getAllCategories();
+        categories.value = response.data;
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      }
+    };
+
+    const applyFilters = () => {
+      productStore.fetchProducts();
+    };
+
+    const filterConfig = computed(() => [
+      { type: 'search', key: 'search', col: 'col-md-3' },
+      { type: 'perPage', key: 'perPage', col: 'col-md-2' },
+      {
+        type: 'select',
+        key: 'status',
+        label: 'Estado',
+        options: [
+          { value: 'disponible', text: 'Disponible' },
+          { value: 'nuevo', text: 'Nuevo' },
+          { value: 'oferta', text: 'Oferta' },
+          { value: 'agotado', text: 'Agotado' },
+        ],
+        col: 'col-md-2',
+      },
+      {
+        type: 'select',
+        key: 'brandId',
+        label: 'Marca',
+        options: brands.value.map(b => ({ value: b.id, text: b.name })),
+        col: 'col-md-2',
+      },
+      {
+        type: 'select',
+        key: 'categoryId',
+        label: 'Categoría',
+        options: categories.value.map(c => ({ value: c.id, text: c.name })),
+        col: 'col-md-3',
+      },
+    ]);
+
+    const changePage = (page) => {
+      if (page >= 1 && page <= pagination.value.totalPages) {
+        productStore.setPage(page);
+        productStore.fetchProducts();
+      }
+    };
+
+    const viewProduct = (product) => {
+      selectedProduct.value = product;
+    };
+
+    const confirmDelete = (product) => {
+      Swal.fire({
+        title: `¿Estás seguro de eliminar el producto ${product.code}?`,
+        text: "No podrás revertir esta acción.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          productStore.deleteProduct(product.id);
         }
+      });
+    };
 
-        const loadCategories = async () => {
-            try {
-                const response = await categoryService.getAll()
-                categories.value = response.data
-            } catch (error) {
-                console.error('Error loading categories:', error)
-            }
-        }
+    const createProduct = () => {
+      editingProduct.value = null;
+      showProductForm.value = true;
+    };
 
-        const showPagination = computed(() => filters.value.perPage !== 'all')
+    const editProduct = (product) => {
+      editingProduct.value = product;
+      showProductForm.value = true;
+    };
 
-        const applyFilters = () => {
-            productStore.setFilters(filters.value)
-            productStore.fetchProducts()
-        }
+    const closeProductForm = () => {
+      showProductForm.value = false;
+      editingProduct.value = null;
+    };
 
-        const debouncedSearch = () => {
-            clearTimeout(searchTimeout)
-            searchTimeout = setTimeout(() => {
-                applyFilters()
-            }, 500)
-        }
+    const clearFilters = () => {
+      productStore.setFilters({
+        search: '',
+        status: '',
+        brandId: '',
+        categoryId: '',
+        perPage: '10',
+        sortBy: 'name',
+        sortOrder: 'asc',
+      });
+      productStore.fetchProducts();
+    };
 
-        const changePage = (page) => {
-            if (page >= 1 && page <= pagination.value.totalPages) {
-                productStore.setPage(page)
-                productStore.fetchProducts()
-            }
-        }
+    const sort = (field) => {
+      const { sortBy, sortOrder } = productStore.filters;
+      let newSortOrder = 'asc';
+      if (sortBy === field && sortOrder === 'asc') {
+        newSortOrder = 'desc';
+      }
+      productStore.setFilters({ ...productStore.filters, sortBy: field, sortOrder: newSortOrder });
+      productStore.fetchProducts();
+    };
 
-        const viewProduct = (product) => {
-            selectedProduct.value = product
-        }
+    const handleFormSuccess = () => {
+      closeProductForm();
+      productStore.fetchProducts();
+    };
 
-        const confirmDelete = (product) => {
-            if (confirm(`¿Estás seguro de eliminar el producto ${product.code}?`)) {
-                productStore.deleteProduct(product.id)
-            }
-        }
+    onMounted(() => {
+      productStore.fetchProducts();
+      loadBrands();
+      loadCategories();
+    });
 
-        const createProduct = () => {
-            editingProduct.value = null
-            showProductForm.value = true
-        }
+    const baseUrl = import.meta.env.NODE_ENV === "production"
+      ? `${import.meta.env.PROD_BACKEND_URL}`
+      : `${import.meta.env.LOCAL_BACKEND_URL}`;
 
-        const editProduct = (product) => {
-            editingProduct.value = product
-            showProductForm.value = true
-        }
-
-        const closeProductForm = () => {
-            showProductForm.value = false
-            editingProduct.value = null
-        }
-
-        const clearFilters = () => {
-            productStore.setFilters({
-                search: "",
-                status: "",
-                brandId: "",
-                categoryId: "",
-                perPage: "10"
-            })
-            productStore.fetchProducts()
-        }
-
-        const handleFormSuccess = () => {
-            closeProductForm()
-            loadData()
-        }
-
-        onMounted(() => {
-            loadData()
-        })
-
-        return {
-            products,
-            loading,
-            pagination,
-            filters,
-            brands,
-            categories,
-            selectedProduct,
-            showProductForm,
-            editingProduct,
-            canCreate,
-            canDelete,
-            canExport,
-            visiblePages,
-            showPagination,
-            applyFilters,
-            debouncedSearch,
-            changePage,
-            viewProduct,
-            confirmDelete,
-            createProduct,
-            editProduct,
-            closeProductForm,
-            clearFilters,
-            hasNoResults,
-            handleFormSuccess
-        }
-    }
-}
+    return {
+      products,
+      loading,
+      baseUrl,
+      pagination,
+      filters,
+      brands,
+      categories,
+      selectedProduct,
+      showProductForm,
+      editingProduct,
+      canCreate,
+      canDelete,
+      canExport,
+      showPagination,
+      applyFilters,
+      changePage,
+      viewProduct,
+      confirmDelete,
+      createProduct,
+      editProduct,
+      closeProductForm,
+      clearFilters,
+      hasNoResults,
+      handleFormSuccess,
+      sort,
+      filterConfig,
+      // For cart
+      userRole,
+      quantities,
+      addToCart,
+    };
+  },
+};

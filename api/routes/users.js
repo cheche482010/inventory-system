@@ -1,7 +1,7 @@
 const express = require("express")
 const { body, param } = require("express-validator")
 const { User, ActivityLog } = require("../models")
-const { authenticateToken, authorize } = require("../middleware/auth")
+const { authenticateToken, authorize, checkPermission } = require("../middleware/auth")
 const { logActivity } = require("../middleware/activityLogger")
 const { successResponse, errorResponse, paginatedResponse } = require("../helpers/responseHelper")
 const { handleValidationErrors } = require("../helpers/validationHelper")
@@ -154,12 +154,12 @@ const router = express.Router()
  *                 pagination:
  *                   $ref: '#/components/schemas/Pagination'
  */
-router.get("/search", [authenticateToken, authorize("admin", "dev")], async (req, res) => {
+router.get("/search", [authenticateToken, checkPermission("users", "read")], async (req, res) => {
   try {
     const page = Number.parseInt(req.query.page) || 1
     const limit = Number.parseInt(req.query.limit) || 10
     const offset = (page - 1) * limit
-    const { search, role, isActive } = req.query
+    const { search, role, isActive, sortBy, sortOrder } = req.query
 
     const where = {}
 
@@ -174,12 +174,14 @@ router.get("/search", [authenticateToken, authorize("admin", "dev")], async (req
     if (role) where.role = role
     if (isActive !== undefined) where.isActive = isActive === "true"
 
+    const order = sortBy && sortOrder ? [[sortBy, sortOrder]] : [["createdAt", "DESC"]]
+
     const { count, rows } = await User.findAndCountAll({
       where,
       attributes: { exclude: ["password"] },
       limit,
       offset,
-      order: [["createdAt", "DESC"]],
+      order,
     })
 
     const pagination = {
@@ -251,12 +253,12 @@ router.get("/search", [authenticateToken, authorize("admin", "dev")], async (req
  *                 pagination:
  *                   $ref: '#/components/schemas/Pagination'
  */
-router.get("/", [authenticateToken, authorize("admin", "dev")], async (req, res) => {
+router.get("/", [authenticateToken, checkPermission("users", "read")], async (req, res) => {
   try {
     const page = Number.parseInt(req.query.page) || 1
     const limit = Number.parseInt(req.query.limit) || 10
     const offset = (page - 1) * limit
-    const { search, role, isActive } = req.query
+    const { search, role, isActive, sortBy, sortOrder } = req.query
 
     const where = {}
 
@@ -271,6 +273,8 @@ router.get("/", [authenticateToken, authorize("admin", "dev")], async (req, res)
     if (role) where.role = role
     if (isActive !== undefined) where.isActive = isActive === "true"
 
+    const order = sortBy && sortOrder ? [[sortBy, sortOrder]] : [["createdAt", "DESC"]]
+
     const { count, rows } = await User.findAndCountAll({
       where,
       attributes: { exclude: ["password"] },
@@ -284,7 +288,7 @@ router.get("/", [authenticateToken, authorize("admin", "dev")], async (req, res)
       ],
       limit,
       offset,
-      order: [["createdAt", "DESC"]],
+      order,
     })
 
     const usersWithActivityCount = rows.map((user) => ({
@@ -339,7 +343,7 @@ router.get("/", [authenticateToken, authorize("admin", "dev")], async (req, res)
  */
 router.get(
   "/:id",
-  [authenticateToken, authorize("admin", "dev"), param("id").isInt().withMessage("ID debe ser un número")],
+  [authenticateToken, checkPermission("users", "read"), param("id").isInt().withMessage("ID debe ser un número")],
   handleValidationErrors,
   async (req, res) => {
     try {
@@ -401,7 +405,7 @@ router.post(
   "/",
   [
     authenticateToken,
-    authorize("admin", "dev"),
+    checkPermission("users", "create"),
     body("email").isEmail().withMessage("Email inválido"),
     body("password").isLength({ min: 6 }).withMessage("Password debe tener al menos 6 caracteres"),
     body("firstName").notEmpty().withMessage("Nombre requerido"),
@@ -482,7 +486,7 @@ router.put(
   "/:id",
   [
     authenticateToken,
-    authorize("admin", "dev"),
+    checkPermission("users", "update"),
     param("id").isInt().withMessage("ID debe ser un número"),
     body("email").optional().isEmail().withMessage("Email inválido"),
     body("password").optional().isLength({ min: 6 }).withMessage("Password debe tener al menos 6 caracteres"),
@@ -543,7 +547,7 @@ router.put(
  */
 router.delete(
   "/:id",
-  [authenticateToken, authorize("dev"), param("id").isInt().withMessage("ID debe ser un número")],
+  [authenticateToken, checkPermission("users", "delete"), param("id").isInt().withMessage("ID debe ser un número")],
   handleValidationErrors,
   logActivity("DELETE", "USER"),
   async (req, res) => {

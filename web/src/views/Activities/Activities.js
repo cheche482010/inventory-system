@@ -2,11 +2,13 @@ import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
 import { useToast } from 'vue-toastification'
 import ActivityDetailsModal from '@/components/Activities/ActivityDetailsModal.vue'
+import Pagination from '@/components/Pagination/Pagination.vue'
 
 export default {
     name: 'Activities',
     components: {
-        ActivityDetailsModal
+        ActivityDetailsModal,
+        Pagination
     },
     setup() {
         const toast = useToast()
@@ -26,18 +28,6 @@ export default {
         const filters = ref({
             action: '',
             resource: ''
-        })
-
-        const visiblePages = computed(() => {
-            const current = pagination.value.currentPage
-            const total = pagination.value.totalPages
-            const pages = []
-
-            for (let i = Math.max(1, current - 2); i <= Math.min(total, current + 2); i++) {
-                pages.push(i)
-            }
-
-            return pages
         })
 
         const loadActivities = async () => {
@@ -114,6 +104,10 @@ export default {
             })
         }
 
+        const getRowNumber = (index) => {
+            return (pagination.value.currentPage - 1) * pagination.value.itemsPerPage + index + 1
+        }
+
         onMounted(() => {
             loadActivities()
         })
@@ -124,7 +118,6 @@ export default {
             selectedActivity,
             pagination,
             filters,
-            visiblePages,
             hasNoResults,
             getActionBadgeColor,
             getActionLabel,
@@ -132,7 +125,8 @@ export default {
             viewDetails,
             applyFilters,
             changePage,
-            formatDate
+            formatDate,
+            getRowNumber
         }
     }
 }

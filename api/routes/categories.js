@@ -1,7 +1,7 @@
 const express = require("express")
 const { body, param } = require("express-validator")
 const { Category, Product } = require("../models")
-const { authenticateToken, authorize } = require("../middleware/auth")
+const { authenticateToken, authorize, checkPermission } = require("../middleware/auth")
 const { logActivity } = require("../middleware/activityLogger")
 const { successResponse, errorResponse, paginatedResponse } = require("../helpers/responseHelper")
 const { handleValidationErrors } = require("../helpers/validationHelper")
@@ -97,13 +97,15 @@ router.get("/", authenticateToken, async (req, res) => {
     const page = Number.parseInt(req.query.page) || 1
     const limit = Number.parseInt(req.query.limit) || 10
     const offset = (page - 1) * limit
-    const { search } = req.query
+    const { search, sortBy, sortOrder } = req.query
 
     const where = { isActive: true }
 
     if (search) {
       where[Op.or] = [{ name: { [Op.like]: `%${search}%` } }, { description: { [Op.like]: `%${search}%` } }]
     }
+
+    const order = sortBy && sortOrder ? [[sortBy, sortOrder]] : [["name", "ASC"]]
 
     const { count, rows } = await Category.findAndCountAll({
       where,
@@ -118,7 +120,8 @@ router.get("/", authenticateToken, async (req, res) => {
       ],
       limit,
       offset,
-      order: [["name", "ASC"]],
+      order,
+      distinct: true,
     })
 
     const categoriesWithProductCount = rows.map((category) => ({
@@ -136,6 +139,27 @@ router.get("/", authenticateToken, async (req, res) => {
     paginatedResponse(res, categoriesWithProductCount, pagination)
   } catch (error) {
     errorResponse(res, "Error al obtener categorías")
+  }
+})
+
+/**
+ * @swagger
+ * /categories/all:
+ *   get:
+ *     summary: Obtener todas las categorías (sin paginación)
+ *     tags: [Categories]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de todas las categorías
+ */
+router.get("/all", authenticateToken, async (req, res) => {
+  try {
+    const categories = await Category.findAll({ where: { isActive: true }, order: [["name", "ASC"]] })
+    successResponse(res, categories)
+  } catch (error) {
+    errorResponse(res, "Error al obtener todas las categorías")
   }
 })
 
@@ -246,7 +270,7 @@ router.get(
  */
 router.post(
   "/",
-  [authenticateToken, authorize("admin", "dev"), body("name").notEmpty().withMessage("Nombre requerido")],
+  [authenticateToken, checkPermission("categories", "create"), body("name").notEmpty().withMessage("Nombre requerido")],
   handleValidationErrors,
   logActivity("CREATE", "CATEGORY"),
   async (req, res) => {
@@ -303,7 +327,7 @@ router.put(
   "/:id",
   [
     authenticateToken,
-    authorize("admin", "dev"),
+    checkPermission("categories", "update"),
     param("id").isInt().withMessage("ID debe ser un número"),
     body("name").notEmpty().withMessage("Nombre requerido"),
   ],
@@ -355,7 +379,7 @@ router.put(
  */
 router.delete(
   "/:id",
-  [authenticateToken, authorize("dev"), param("id").isInt().withMessage("ID debe ser un número")],
+  [authenticateToken, checkPermission("categories", "delete"), param("id").isInt().withMessage("ID debe ser un número")],
   handleValidationErrors,
   logActivity("DELETE", "CATEGORY"),
   async (req, res) => {

@@ -1,19 +1,24 @@
 import * as XLSX from 'xlsx';
 import Swal from 'sweetalert2';
 import { importService } from '@/services/importService';
+import Pagination from '@/components/Pagination/Pagination.vue';
 
 export default {
     name: 'ImportarExcel',
+    components: {
+        Pagination,
+    },
     data() {
         return {
             excelData: [],
             currentPage: 1,
             pageSize: 10,
-            inputPage: 1,
             searchText: '',
             priceFilter: '',
             brandFilter: '',
-            categoryFilter: ''
+            categoryFilter: '',
+            showImageModal: false,
+            selectedImage: null
         };
     },
     computed: {
@@ -71,38 +76,6 @@ export default {
         },
         paginatedData() {
             return this.filteredData.slice(this.startIndex, this.startIndex + this.pageSize);
-        },
-        displayedPages() {
-            const range = 2; 
-            const start = Math.max(2, this.currentPage - range);
-            const end = Math.min(this.totalPages - 1, this.currentPage + range);
-
-            let pages = [];
-            for (let i = start; i <= end; i++) {
-                pages.push(i);
-            }
-
-            if (this.currentPage <= range + 1) {
-                const extraPages = (range + 1) - this.currentPage;
-                const endExtra = Math.min(this.totalPages - 1, end + extraPages);
-                for (let i = end + 1; i <= endExtra; i++) {
-                    pages.push(i);
-                }
-            }
-
-            if (this.currentPage >= this.totalPages - range) {
-                const extraPages = (range + 1) - (this.totalPages - this.currentPage);
-                const startExtra = Math.max(2, start - extraPages);
-                for (let i = startExtra; i < start; i++) {
-                    pages.unshift(i);
-                }
-            }
-
-            if (this.totalPages <= 1) {
-                return [];
-            }
-
-            return pages;
         }
     },
     watch: {
@@ -170,10 +143,13 @@ export default {
                         },
                         categories: {
                             name: currentCategory
-                        }
+                        },
+                        img: null
                     },
                     editingDesc: false,
-                    tempDesc: ""
+                    tempDesc: "",
+                    imageFile: null,
+                    imagePreview: null
                 });
             }
 
@@ -194,12 +170,38 @@ export default {
             this.excelData[index].editingDesc = false;
             this.excelData[index].tempDesc = "";
         },
-        goToPage() {
-            if (this.inputPage >= 1 && this.inputPage <= this.totalPages) {
-                this.currentPage = this.inputPage;
-            } else {
-                this.inputPage = this.currentPage;
+        handleImageUpload(event, index) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                Swal.fire('Error', 'Solo se permiten archivos de imagen', 'error');
+                return;
             }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                this.excelData[index].imageFile = file;
+                this.excelData[index].imagePreview = e.target.result;
+                this.excelData[index].producto.img = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        },
+        removeImage(index) {
+            this.excelData[index].imageFile = null;
+            this.excelData[index].imagePreview = null;
+            this.excelData[index].producto.img = null;
+        },
+        viewImageModal(imageUrl) {
+            this.selectedImage = imageUrl;
+            this.showImageModal = true;
+        },
+        closeImageModal() {
+            this.showImageModal = false;
+            this.selectedImage = null;
+        },
+        onPageChanged(page) {
+            this.currentPage = page;
         },
         clearFilters() {
             this.searchText = '';
@@ -267,6 +269,7 @@ export default {
                 status: item.producto.status,
                 brand: item.producto.marca.name,
                 category: item.producto.categories.name,
+                img: item.imageFile || item.producto.img,
             }));
 
             try {

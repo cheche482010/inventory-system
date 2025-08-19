@@ -2,7 +2,12 @@ import api from "./api"
 
 export const productService = {
   getAll(params) {
-    return api.get("/products", { params })
+    const queryParams = { ...params }
+    if (queryParams.perPage) {
+      queryParams.limit = queryParams.perPage
+      delete queryParams.perPage
+    }
+    return api.get("/products", { params: queryParams })
   },
 
   getById(id) {
@@ -10,11 +15,17 @@ export const productService = {
   },
 
   create(data) {
-    return api.post("/products", data)
+    const config = data instanceof FormData ? {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    } : {}
+    return api.post("/products", data, config)
   },
 
   update(id, data) {
-    return api.put(`/products/${id}`, data)
+    const config = data instanceof FormData ? {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    } : {}
+    return api.put(`/products/${id}`, data, config)
   },
 
   delete(id) {

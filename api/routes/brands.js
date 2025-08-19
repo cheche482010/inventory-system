@@ -1,7 +1,7 @@
 const express = require("express")
 const { body, param } = require("express-validator")
 const { Brand, Product } = require("../models")
-const { authenticateToken, authorize } = require("../middleware/auth")
+const { authenticateToken, authorize, checkPermission } = require("../middleware/auth")
 const { logActivity } = require("../middleware/activityLogger")
 const { successResponse, errorResponse, paginatedResponse } = require("../helpers/responseHelper")
 const { handleValidationErrors } = require("../helpers/validationHelper")
@@ -93,13 +93,15 @@ router.get("/", authenticateToken, async (req, res) => {
     const page = Number.parseInt(req.query.page) || 1
     const limit = Number.parseInt(req.query.limit) || 10
     const offset = (page - 1) * limit
-    const { search } = req.query
+    const { search, sortBy, sortOrder } = req.query
 
     const where = { isActive: true }
 
     if (search) {
       where.name = { [Op.like]: `%${search}%` }
     }
+
+    const order = sortBy && sortOrder ? [[sortBy, sortOrder]] : [["id", "ASC"]]
 
     const { count, rows } = await Brand.findAndCountAll({
       where,
@@ -114,7 +116,8 @@ router.get("/", authenticateToken, async (req, res) => {
       ],
       limit,
       offset,
-      order: [["id", "ASC"]],
+      order,
+      distinct: true,
     })
 
     const brandsWithProductCount = rows.map((brand) => ({
@@ -132,6 +135,27 @@ router.get("/", authenticateToken, async (req, res) => {
     paginatedResponse(res, brandsWithProductCount, pagination)
   } catch (error) {
     errorResponse(res, "Error al obtener marcas")
+  }
+})
+
+/**
+ * @swagger
+ * /brands/all:
+ *   get:
+ *     summary: Obtener todas las marcas (sin paginación)
+ *     tags: [Brands]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de todas las marcas
+ */
+router.get("/all", authenticateToken, async (req, res) => {
+  try {
+    const brands = await Brand.findAll({ where: { isActive: true }, order: [["name", "ASC"]] })
+    successResponse(res, brands)
+  } catch (error) {
+    errorResponse(res, "Error al obtener todas las marcas")
   }
 })
 
@@ -238,7 +262,7 @@ router.get(
  */
 router.post(
   "/",
-  [authenticateToken, authorize("admin", "dev"), body("name").notEmpty().withMessage("Nombre requerido")],
+  [authenticateToken, checkPermission("brands", "create"), body("name").notEmpty().withMessage("Nombre requerido")],
   handleValidationErrors,
   logActivity("CREATE", "BRAND"),
   async (req, res) => {
@@ -291,7 +315,7 @@ router.put(
   "/:id",
   [
     authenticateToken,
-    authorize("admin", "dev"),
+    checkPermission("brands", "update"),
     param("id").isInt().withMessage("ID debe ser un número"),
     body("name").notEmpty().withMessage("Nombre requerido"),
   ],
@@ -343,7 +367,7 @@ router.put(
  */
 router.delete(
   "/:id",
-  [authenticateToken, authorize("dev"), param("id").isInt().withMessage("ID debe ser un número")],
+  [authenticateToken, checkPermission("brands", "delete"), param("id").isInt().withMessage("ID debe ser un número")],
   handleValidationErrors,
   logActivity("DELETE", "BRAND"),
   async (req, res) => {

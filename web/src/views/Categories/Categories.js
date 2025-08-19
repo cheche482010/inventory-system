@@ -1,14 +1,18 @@
 import { ref, computed, onMounted } from 'vue'
+import Swal from 'sweetalert2'
 import { useAuthStore } from '@/stores/auth'
-import { useProductStore } from '@/stores/products'
 import { categoryService } from '@/services/categoryService'
 import { useToast } from 'vue-toastification'
 import CategoryModal from '@/components/Categories/CategoryModal.vue'
+import Pagination from '@/components/Pagination/Pagination.vue'
+import FilterSection from '@/components/FilterSection/FilterSection.vue'
 
 export default {
     name: 'Categories',
     components: {
-        CategoryModal
+        CategoryModal,
+        Pagination,
+        FilterSection,
     },
     setup() {
         const authStore = useAuthStore()
@@ -22,9 +26,11 @@ export default {
         const filters = ref({
             search: "",
             perPage: "10",
-            page: 1
+            page: 1,
+            sortBy: 'createdAt',
+            sortOrder: 'desc'
         })
-        
+
         const pagination = ref({
             currentPage: 1,
             totalPages: 1,
@@ -32,8 +38,8 @@ export default {
             itemsPerPage: 10
         })
 
-        const canCreate = computed(() => authStore.canCreate)
-        const canDelete = computed(() => authStore.canDelete)
+        const canCreate = computed(() => authStore.hasPermission('categories:create'))
+        const canDelete = computed(() => authStore.hasPermission('categories:delete'))
 
         const loadCategories = async () => {
             loading.value = true
@@ -41,25 +47,17 @@ export default {
                 const params = {
                     page: filters.value.page,
                     limit: filters.value.perPage === 'all' ? 9999 : Number(filters.value.perPage),
+                    sortBy: filters.value.sortBy,
+                    sortOrder: filters.value.sortOrder,
                 }
                 if (filters.value.search) params.search = filters.value.search
 
                 const response = await categoryService.getAll({ params })
-                
+
                 categories.value = Array.isArray(response.data) ? response.data : []
 
                 if (response.pagination) {
-                    const actualItemsPerPage = filters.value.perPage === 'all' ? categories.value.length : Number(filters.value.perPage)
-                    const isLastPage = categories.value.length < actualItemsPerPage
-                    const currentPage = filters.value.page
-                    const actualTotalPages = isLastPage ? currentPage : Math.max(currentPage, Math.ceil(response.pagination.totalItems / actualItemsPerPage))
-                    
-                    pagination.value = {
-                        currentPage: currentPage,
-                        totalPages: actualTotalPages,
-                        totalItems: response.pagination.totalItems,
-                        itemsPerPage: actualItemsPerPage
-                    }
+                    pagination.value = response.pagination
                 } else {
                     pagination.value = {
                         currentPage: 1,
@@ -86,17 +84,23 @@ export default {
             }
         }
 
-        // NUEVO: Métodos de filtrado y paginación
-        let searchTimeout
-        const debouncedSearch = () => {
-            clearTimeout(searchTimeout)
-            searchTimeout = setTimeout(() => {
-                filters.value.page = 1
-                loadCategories()
-            }, 500)
-        }
+        const filterConfig = computed(() => [
+            { type: 'search', key: 'search', col: 'col-md-4' },
+            { type: 'perPage', key: 'perPage', col: 'col-md-2' },
+        ]);
+
         const applyFilters = () => {
             filters.value.page = 1
+            loadCategories()
+        }
+
+        const sort = (field) => {
+            if (filters.value.sortBy === field) {
+                filters.value.sortOrder = filters.value.sortOrder === 'asc' ? 'desc' : 'asc'
+            } else {
+                filters.value.sortBy = field
+                filters.value.sortOrder = 'asc'
+            }
             loadCategories()
         }
         const changePage = (page) => {
@@ -124,15 +128,26 @@ export default {
         }
 
         const confirmDelete = async (category) => {
-            if (confirm(`¿Estás seguro de eliminar la categoría "${category.name}"?`)) {
-                try {
-                    await categoryService.delete(category.id)
-                    toast.success('Categoría eliminada exitosamente')
-                    loadCategories()
-                } catch (error) {
-                    toast.error('Error al eliminar categoría')
+            Swal.fire({
+                title: `¿Estás seguro de eliminar la categoría "${category.name}"?`,
+                text: "No podrás revertir esta acción.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar',
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        await categoryService.delete(category.id)
+                        toast.success('Categoría eliminada exitosamente')
+                        loadCategories()
+                    } catch (error) {
+                        toast.error('Error al eliminar categoría')
+                    }
                 }
-            }
+            });
         }
 
         const closeModal = () => {
@@ -153,17 +168,14 @@ export default {
             loadCategories()
         })
 
-        const visiblePages = computed(() => {
-            const current = pagination.value.currentPage
-            const total = pagination.value.totalPages
-            const pages = []
-            for (let i = Math.max(1, current - 2); i <= Math.min(total, current + 2); i++) {
-                pages.push(i)
-            }
-            return pages
-        })
-
         const showPagination = computed(() => filters.value.perPage !== 'all' && pagination.value.totalPages > 1)
+
+        const getRowNumber = (index) => {
+            if (filters.value.perPage === 'all') {
+                return index + 1
+            }
+            return (pagination.value.currentPage - 1) * pagination.value.itemsPerPage + index + 1
+        }
 
         return {
             categories,
@@ -174,9 +186,7 @@ export default {
             canDelete,
             filters,
             pagination,
-            visiblePages,
             showPagination,
-            debouncedSearch,
             applyFilters,
             changePage,
             clearFilters,
@@ -185,7 +195,10 @@ export default {
             confirmDelete,
             closeModal,
             handleSaved,
-            formatDate
+            formatDate,
+            sort,
+            filterConfig,
+            getRowNumber,
         }
     }
 }

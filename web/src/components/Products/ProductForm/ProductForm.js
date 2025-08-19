@@ -22,6 +22,8 @@ export default {
         const brands = ref([])
         const categories = ref([])
         const errors = ref({})
+        const imagePreview = ref(null)
+        const selectedFile = ref(null)
 
         const form = ref({
             code: '',
@@ -30,7 +32,8 @@ export default {
             price: '',
             status: '',
             brandId: '',
-            categoryId: ''
+            categoryId: '',
+            imagen: null
         })
 
         const isEdit = computed(() => !!props.product)
@@ -38,12 +41,15 @@ export default {
         const loadData = async () => {
             try {
                 const [brandsResponse, categoriesResponse] = await Promise.all([
-                    brandService.getAll(),
-                    categoryService.getAll()
+                    brandService.getAllBrands(),
+                    categoryService.getAllCategories()
                 ])
 
                 brands.value = brandsResponse.data
                 categories.value = categoriesResponse.data
+                const baseUrl = import.meta.env.NODE_ENV === "production"
+                    ? `${import.meta.env.PROD_BACKEND_URL}`
+                    : `${import.meta.env.LOCAL_BACKEND_URL}`;
 
                 if (isEdit.value && props.product) {
                     form.value = {
@@ -53,7 +59,8 @@ export default {
                         price: props.product.price,
                         status: props.product.status,
                         brandId: props.product.brandId,
-                        categoryId: props.product.categoryId
+                        categoryId: props.product.categoryId,
+                        imagen: props.product.imagen ? `${baseUrl}/uploads/${props.product.imagen}` : null
                     }
                 }
             } catch (error) {
@@ -91,15 +98,39 @@ export default {
             return Object.keys(errors.value).length === 0
         }
 
+        const handleFileChange = (event) => {
+            const file = event.target.files[0]
+            if (file) {
+                selectedFile.value = file
+                const reader = new FileReader()
+                reader.onload = (e) => {
+                    imagePreview.value = e.target.result
+                }
+                reader.readAsDataURL(file)
+            }
+        }
+
         const handleSubmit = async () => {
             if (!validateForm()) return
 
             loading.value = true
+
+            const formData = new FormData()
+            Object.keys(form.value).forEach(key => {
+                if (key !== 'imagen' && form.value[key] !== null && form.value[key] !== '') {
+                    formData.append(key, form.value[key])
+                }
+            })
+
+            if (selectedFile.value) {
+                formData.append('imagen', selectedFile.value)
+            }
+
             try {
                 if (isEdit.value) {
-                    await productStore.updateProduct(props.product.id, form.value)
+                    await productStore.updateProduct(props.product.id, formData)
                 } else {
-                    await productStore.createProduct(form.value)
+                    await productStore.createProduct(formData)
                 }
                 emit('success')
             } catch (error) {
@@ -120,6 +151,8 @@ export default {
             categories,
             errors,
             isEdit,
+            imagePreview,
+            handleFileChange,
             handleSubmit
         }
     }
