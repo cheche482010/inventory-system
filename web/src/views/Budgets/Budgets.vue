@@ -21,6 +21,7 @@
                 <th>Fecha</th>
                 <th>Items</th>
                 <th>Total</th>
+                <th>Total (Bs.)</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -30,7 +31,11 @@
                 <td>{{ budget.user.firstName }} {{ budget.user.lastName }}</td>
                 <td>{{ new Date(budget.updatedAt).toLocaleDateString() }}</td>
                 <td>{{ budget.items.length }}</td>
-                <td>${{ calculateTotal(budget.items).toFixed(2) }}</td>
+                <td>{{ formatCurrency(calculateTotal(budget.items)) }}</td>
+                <td>
+                  <span v-if="rate">{{ formatCurrency(calculateTotal(budget.items) * rate, 'Bs.', 'after') }}</span>
+                  <span v-else>Calculando...</span>
+                </td>
                 <td>
                   <button class="btn btn-sm btn-info me-2 text-white" @click="viewBudget(budget)">
 
@@ -49,7 +54,7 @@
 
     <!-- Details Modal -->
     <div v-if="selectedBudget" class="modal show d-block" tabindex="-1">
-      <div class="modal-dialog modal-lg">
+      <div class="modal-dialog modal-xl">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Detalles del Presupuesto #{{ selectedBudget.id }}</h5>
@@ -64,21 +69,36 @@
                   <th>Producto</th>
                   <th>Cantidad</th>
                   <th>Precio Unitario</th>
+                  <th>Precio Unitario (Bs.)</th>
                   <th>Subtotal</th>
+                  <th>Subtotal (Bs.)</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="item in selectedBudget.items" :key="item.id">
                   <td>{{ item.product.name }}</td>
                   <td>{{ item.quantity }}</td>
-                  <td>${{ item.price }}</td>
-                  <td>${{ (item.quantity * item.price).toFixed(2) }}</td>
+                  <td>{{ formatCurrency(item.price) }}</td>
+                  <td>
+                    <span v-if="rate">{{ formatCurrency(item.price * rate, 'Bs.', 'after') }}</span>
+                    <span v-else>...</span>
+                  </td>
+                  <td>{{ formatCurrency(item.quantity * item.price) }}</td>
+                  <td>
+                    <span v-if="rate">{{ formatCurrency(item.quantity * item.price * rate, 'Bs.', 'after') }}</span>
+                    <span v-else>...</span>
+                  </td>
                 </tr>
               </tbody>
               <tfoot>
                 <tr>
-                  <th colspan="3" class="text-end">Total:</th>
-                  <th>${{ calculateTotal(selectedBudget.items).toFixed(2) }}</th>
+                  <th colspan="4" class="text-end">Total:</th>
+                  <th>{{ formatCurrency(calculateTotal(selectedBudget.items)) }}</th>
+                  <th>
+                    <span v-if="rate">{{ formatCurrency(calculateTotal(selectedBudget.items) * rate, 'Bs.', 'after')
+                      }}</span>
+                    <span v-else>...</span>
+                  </th>
                 </tr>
               </tfoot>
             </table>

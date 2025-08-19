@@ -1,6 +1,7 @@
 import api from "./api"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
+import { formatCurrency } from "@/helpers/formatHelper"
 
 export const budgetService = {
   getAll() {
@@ -15,7 +16,7 @@ export const budgetService = {
     return api.get(`/budgets/${id}`)
   },
 
-  generateBudgetPdf(budget) {
+  generateBudgetPdf(budget, rate) {
     try {
       const doc = new jsPDF()
       const user = budget.user
@@ -29,27 +30,48 @@ export const budgetService = {
       doc.text(`Cliente: ${user.firstName} ${user.lastName}`, 14, 40)
       doc.text(`Email: ${user.email}`, 14, 46)
       doc.text(`Fecha: ${new Date(budget.updatedAt).toLocaleDateString()}`, 14, 52)
+      if (rate) {
+        doc.text(`Tasa BCV: ${rate} Bs.`, 14, 58)
+      }
 
       // Table Data
-      const tableData = budget.items.map((item) => [
-        item.product.name,
-        item.quantity,
-        `$${item.price}`,
-        `$${(item.quantity * item.price).toFixed(2)}`,
-      ])
+      const tableData = budget.items.map((item) => {
+        const subtotal = item.quantity * item.price;
+        const row = [
+          item.product.name,
+          item.quantity,
+          formatCurrency(item.price),
+          formatCurrency(subtotal),
+        ];
+        if (rate) {
+          row.splice(3, 0, formatCurrency(item.price * rate, 'Bs.', 'after'));
+          row.push(formatCurrency(subtotal * rate, 'Bs.', 'after'));
+        }
+        return row;
+      });
 
       // Table Footer
       const total = budget.items.reduce((sum, item) => sum + item.quantity * item.price, 0)
-      tableData.push([
-        { content: "Total:", colSpan: 3, styles: { halign: "right", fontStyle: "bold" } },
-        { content: `$${total.toFixed(2)}`, styles: { fontStyle: "bold" } },
-      ])
+      const footer = [
+        { content: "Total:", colSpan: rate ? 4: 3, styles: { halign: "right", fontStyle: "bold" } },
+        { content: formatCurrency(total), styles: { fontStyle: "bold" } },
+      ];
+
+      if (rate) {
+        footer.push({ content: formatCurrency(total * rate, 'Bs.', 'after'), styles: { fontStyle: "bold" } });
+      }
+      tableData.push(footer)
 
       // Generate Table
+      const head = [["Producto", "Cantidad", "Precio Unit.", "Subtotal"]];
+      if (rate) {
+        head[0].splice(3, 0, "Precio Unit. (Bs.)");
+        head[0].push("Subtotal (Bs.)");
+      }
       autoTable(doc, {
-        head: [["Producto", "Cantidad", "Precio Unit.", "Subtotal"]],
+        head: head,
         body: tableData,
-        startY: 60,
+        startY: 65,
         headStyles: {
           fillColor: [41, 128, 185],
           textColor: 255,
@@ -66,9 +88,9 @@ export const budgetService = {
     }
   },
 
-  async downloadPdf(id) {
+  async downloadPdf(id, rate) {
     const response = await this.getBudget(id)
-    this.generateBudgetPdf(response.data)
+    this.generateBudgetPdf(response.data, rate)
     return response
   },
 }

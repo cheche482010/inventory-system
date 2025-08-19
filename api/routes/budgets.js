@@ -62,7 +62,7 @@ router.get("/my", async (req, res) => {
                 { model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email'] },
                 { model: CartItem, as: 'items', include: [{ model: Product, as: 'product' }] }
             ],
-            order: [['updatedAt', 'DESC']]
+            order: [['updatedAt', 'ASC']]
         });
         successResponse(res, budgets);
     } catch (error) {

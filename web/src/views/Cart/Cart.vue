@@ -32,8 +32,9 @@
                             <tr v-for="item in cartItems" :key="item.id">
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <img :src="`${baseUrl}/uploads/${item.product.imagen}`" :alt="item.product.name"
-                                            class="me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                                        <img v-if="item.product.imagen" :src="`${baseUrl}/uploads/${item.product.imagen}`" :alt="item.product.name"
+                                            class="me-3" style="width: 60px; height: 60px; object-fit: cover;"> 
+                                        <span v-else class="text-muted small p-2">Sin imagen</span> 
                                         <div>
                                             <strong>{{ item.product.name }}</strong>
                                             <br>

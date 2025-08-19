@@ -88,7 +88,7 @@
                   <td>
                     <img v-if="product.imagen" :src="`${baseUrl}/uploads/${product.imagen}`" :alt="product.name"
                       class="product-image img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
-                    <span v-else class="text-muted small">Sin imagen</span>
+                    <span v-else class="text-muted small">Sin imagen</span> 
                   </td>
                   <td>{{ product.code }}</td>
                   <td>{{ product.name.substring(0, 60) }}...</td>
