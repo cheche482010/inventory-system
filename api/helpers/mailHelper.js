@@ -1,93 +1,109 @@
 const nodemailer = require('nodemailer');
+const { User, Notification } = require('../models');
+const { Op } = require("sequelize");
+const { generateBudgetPdf } = require('./pdfHelper');
 
-// In a real application, these would come from process.env
-const testAccount = {
-    user: 'arlen.wolff@ethereal.email',
-    pass: 'gZ5gDxW1s7YxWzwnpW',
-    smtp: {
-        host: 'smtp.ethereal.email',
-        port: 587,
-        secure: false
-    },
-    imap: {
-        host: 'imap.ethereal.email',
-        port: 993,
-        secure: true
-    },
-    pop3: {
-        host: 'pop.ethereal.email',
-        port: 995,
-        secure: true
-    },
-    web: 'https://ethereal.email'
-};
-
-const transporter = nodemailer.createTransport({
-    host: testAccount.smtp.host,
-    port: testAccount.smtp.port,
-    secure: testAccount.smtp.secure,
+// SMTP configuration from environment variables
+const mailConfig = {
+    host: process.env.MAIL_HOST,
+    port: process.env.MAIL_PORT ? parseInt(process.env.MAIL_PORT, 10) : 587,
+    secure: process.env.MAIL_SECURE === 'true',
     auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
     },
-});
-
-const sendBudgetEmail = async (user, cart) => {
-    let total = 0;
-    const itemsHtml = cart.items.map(item => {
-        const subtotal = item.price * item.quantity;
-        total += subtotal;
-        return `
-            <tr>
-                <td>${item.product.name}</td>
-                <td style="text-align: center;">${item.quantity}</td>
-                <td style="text-align: right;">$${item.price}</td>
-                <td style="text-align: right;">$${subtotal.toFixed(2)}</td>
-            </tr>
-        `;
-    }).join('');
-
-    const emailHtml = `
-        <h1>Hola, ${user.firstName}!</h1>
-        <p>Tu solicitud de presupuesto #${cart.id} ha sido aprobada. Aquí están los detalles:</p>
-        <table style="width: 100%; border-collapse: collapse;" border="1">
-            <thead>
-                <tr>
-                    <th>Producto</th>
-                    <th style="text-align: center;">Cantidad</th>
-                    <th style="text-align: right;">Precio Unit.</th>
-                    <th style="text-align: right;">Subtotal</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${itemsHtml}
-            </tbody>
-            <tfoot>
-                <tr>
-                    <th colspan="3" style="text-align: right;">Total:</th>
-                    <th style="text-align: right;">$${total.toFixed(2)}</th>
-                </tr>
-            </tfoot>
-        </table>
-        <p>Gracias por tu interés.</p>
-    `;
-
-    try {
-        const info = await transporter.sendMail({
-            from: '"Tu Tienda" <no-reply@example.com>',
-            to: user.email,
-            subject: `Presupuesto Aprobado #${cart.id}`,
-            html: emailHtml,
-        });
-
-        console.log('Message sent: %s', info.messageId);
-        // Preview only available when sending through an Ethereal account
-        console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
-        return info;
-    } catch (error) {
-        console.error("Error sending email:", error);
-        throw error;
+    tls: {
+        rejectUnauthorized: false // do not fail on invalid certs
     }
 };
 
-module.exports = { sendBudgetEmail };
+const transporter = nodemailer.createTransport(mailConfig);
+
+if (!process.env.MAIL_HOST) {
+    console.warn(`
+        ****************************************************************
+        * WARNING: Mail server is not configured. Emails will not be sent. *
+        * Please set MAIL_HOST, MAIL_USER, etc. in .env file.        *
+        ****************************************************************
+    `);
+}
+
+/**
+ * Sends an email using the pre-configured transporter.
+ */
+const sendEmail = async (to, subject, html, attachments = []) => {
+    // If mail host is not set, don't even try to send.
+    if (!process.env.MAIL_HOST) return;
+    try {
+        const info = await transporter.sendMail({
+            from: `"Tu Tienda" <${process.env.MAIL_USER}>`,
+            to,
+            subject,
+            html,
+            attachments,
+        });
+        console.log('Message sent: %s', info.messageId);
+        console.log('Preview URL: %s', nodemailer.getTestMessageUrl(info));
+    } catch (error) {
+        console.error(`Error sending email to ${to}:`, error);
+    }
+};
+
+/**
+ * Notifies all admins and devs about a new budget submission.
+ */
+const sendNewBudgetAdminNotification = async (cart, budgetUser, dolarRate) => {
+    const adminsAndDevs = await User.findAll({ where: { role: { [Op.in]: ['admin', 'dev'] } } });
+    if (!adminsAndDevs.length) return;
+
+    const pdfBuffer = await generateBudgetPdf(cart, budgetUser, dolarRate);
+    const subject = `Nueva Solicitud de Presupuesto #${cart.id} de ${budgetUser.firstName}`;
+    const notificationMessage = JSON.stringify({
+        title: 'Nueva solicitud de presupuesto',
+        budgetId: cart.id,
+        userName: budgetUser.firstName
+    });
+
+    for (const admin of adminsAndDevs) {
+        const emailHtml = `
+            <h1>Hola, ${admin.firstName}!</h1>
+            <p>Se ha recibido una nueva solicitud de presupuesto de <b>${budgetUser.firstName} ${budgetUser.lastName}</b>.</p>
+            <p>Se adjunta el presupuesto en formato PDF.</p>
+            <p>Puedes revisar la solicitud en el panel de administración.</p>
+        `;
+        const attachments = [{
+            filename: `presupuesto_${cart.id}.pdf`,
+            content: pdfBuffer,
+            contentType: 'application/pdf'
+        }];
+        
+        await sendEmail(admin.email, subject, emailHtml, attachments);
+        await Notification.create({ userId: admin.id, message: notificationMessage, type: 'new_budget' });
+    }
+};
+
+/**
+ * Sends a confirmation email to the user who submitted the budget.
+ */
+const sendBudgetConfirmationToUser = async (cart, budgetUser, dolarRate) => {
+    const pdfBuffer = await generateBudgetPdf(cart, budgetUser, dolarRate);
+    const subject = `Confirmación de tu Solicitud de Presupuesto #${cart.id}`;
+    const emailHtml = `
+        <h1>Hola, ${budgetUser.firstName}!</h1>
+        <p>Hemos recibido tu solicitud de presupuesto #${cart.id}.</p>
+        <p>En breve, uno de nuestros representantes se pondrá en contacto contigo.</p>
+        <p>Adjuntamos una copia de tu solicitud en formato PDF para tu referencia.</p>
+        <br>
+        <p>Gracias por tu interés,</p>
+        <p><b>El Equipo de Tu Tienda</b></p>
+    `;
+    const attachments = [{
+        filename: `presupuesto_${cart.id}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf'
+    }];
+    
+    await sendEmail(budgetUser.email, subject, emailHtml, attachments);
+};
+
+module.exports = { sendNewBudgetAdminNotification, sendBudgetConfirmationToUser };

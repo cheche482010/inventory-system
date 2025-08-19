@@ -1,9 +1,7 @@
 const express = require("express");
 const { authenticateToken, authorize } = require("../middleware/auth");
 const { successResponse, errorResponse } = require("../helpers/responseHelper");
-const { sendBudgetEmail } = require("../helpers/mailHelper");
-const { Cart, CartItem, Product, User, Notification } = require("../models");
-const { Op } = require("sequelize");
+const { Cart, CartItem, Product, User } = require("../models");
 
 const router = express.Router();
 

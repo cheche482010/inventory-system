@@ -2,8 +2,10 @@ const express = require("express");
 const { body } = require("express-validator");
 const { authenticateToken } = require("../middleware/auth");
 const { handleValidationErrors } = require("../helpers/validationHelper");
+const axios = require('axios');
 const { successResponse, errorResponse } = require("../helpers/responseHelper");
-const { Cart, CartItem, Product, User, Notification } = require("../models");
+const { sendNewBudgetAdminNotification, sendBudgetConfirmationToUser } = require("../helpers/mailHelper");
+const { Cart, CartItem, Product, User } = require("../models");
 const { Op } = require("sequelize");
 
 const router = express.Router();
@@ -214,32 +216,37 @@ router.post("/submit", async (req, res) => {
 
         const cart = await Cart.findOne({
             where: { userId, status: 'active' },
-            include: [{ model: CartItem, as: 'items' }]
+            include: [{
+                model: CartItem,
+                as: 'items',
+                include: [{ model: Product, as: 'product' }]
+            }]
         });
 
-        if (!cart || cart.items.length === 0) {
+        if (!cart || !cart.items || cart.items.length === 0) {
             return errorResponse(res, "No se puede enviar un carrito vacío", 400);
         }
 
         cart.status = 'submitted';
         await cart.save();
 
-        // Notify all admins and devs
-        const admins = await User.findAll({
-            where: { role: { [Op.in]: ['admin', 'dev'] } }
-        });
-        const message = JSON.stringify({
-            title: 'Nueva solicitud de presupuesto',
-            budgetId: cart.id,
-            userName: req.user.firstName
-        });
-        for (const admin of admins) {
-            await Notification.create({ userId: admin.id, message, type: 'new_budget' });
+        let dolarRate = null;
+        try {
+            const dolarResponse = await axios.get('https://ve.dolarapi.com/v1/dolares/oficial');
+            if (dolarResponse.data && dolarResponse.data.promedio) {
+                dolarRate = dolarResponse.data.promedio;
+                console.log(`Successfully fetched Dolar rate: ${dolarRate}`);
+            }
+        } catch (apiError) {
+            console.error("Could not fetch Dolar rate. Proceeding without it.", apiError.message);
         }
+
+        sendNewBudgetAdminNotification(cart, req.user, dolarRate);
+        sendBudgetConfirmationToUser(cart, req.user, dolarRate);
 
         successResponse(res, cart, "Solicitud de presupuesto enviada exitosamente");
     } catch (error) {
-        console.error(error);
+        console.error("Error al enviar el presupuesto:", error);
         errorResponse(res, "Error al enviar el presupuesto");
     }
 });
