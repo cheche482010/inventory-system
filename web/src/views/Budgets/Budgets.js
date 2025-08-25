@@ -1,6 +1,7 @@
 import { onMounted, ref } from 'vue';
 import { useBudgetStore } from '@/stores/budgets';
 import { useDolarStore } from '@/stores/dolar';
+import { useAuthStore } from '@/stores/auth';
 import { budgetService } from '@/services/budgetService';
 import { storeToRefs } from 'pinia';
 import Swal from 'sweetalert2';
@@ -13,6 +14,8 @@ export default {
         const { budgets, loading } = storeToRefs(budgetStore);
         const dolarStore = useDolarStore();
         const { rate } = storeToRefs(dolarStore);
+        const authStore = useAuthStore();
+        const { userRole } = storeToRefs(authStore);
         const selectedBudget = ref(null);
 
         onMounted(() => {
@@ -31,10 +34,14 @@ export default {
 
         const download = async (budget) => {
             try {
-                budgetService.generateBudgetPdf(budget, rate.value);
+                if (userRole.value === 'admin' || userRole.value === 'dev') {
+                    await budgetService.downloadBudgetExcel(budget.id);
+                } else {
+                    budgetService.generateBudgetPdf(budget, rate.value);
+                }
             } catch (error) {
-                console.error('Error al descargar el PDF:', error);
-                Swal.fire('Error', 'No se pudo descargar el PDF.', 'error');
+                console.error('Error al descargar el archivo:', error);
+                Swal.fire('Error', 'No se pudo descargar el archivo.', 'error');
             }
         };
 

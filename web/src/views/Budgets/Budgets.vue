@@ -42,7 +42,7 @@
                     <font-awesome-icon icon="eye" /> Ver
                   </button>
                   <button class="btn btn-sm btn-secondary me-2" @click="download(budget)">
-                    <font-awesome-icon icon="file-pdf" /> PDF
+                    <font-awesome-icon icon="download" /> Descargar
                   </button>
                 </td>
               </tr>

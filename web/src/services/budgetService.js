@@ -2,6 +2,8 @@ import api from "./api"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { formatCurrency } from "@/helpers/formatHelper"
+import axios from "axios"
+import { useAuthStore } from "@/stores/auth"
 
 export const budgetService = {
   getAll() {
@@ -92,5 +94,46 @@ export const budgetService = {
     const response = await this.getBudget(id)
     this.generateBudgetPdf(response.data, rate)
     return response
+  },
+
+  async downloadBudgetExcel(budgetId) {
+    const authStore = useAuthStore();
+    const token = authStore.token;
+
+    const fileApi = axios.create({
+      baseURL: api.defaults.baseURL,
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    try {
+      const response = await fileApi.get(`/budgets/${budgetId}/download-excel`, {
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = `presupuesto-${budgetId}.xlsx`;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/);
+        if (filenameMatch && filenameMatch.length > 1) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error('Error al descargar el Excel:', error);
+      throw new Error('Error al descargar el Excel');
+    }
   },
 }
