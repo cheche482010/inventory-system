@@ -10,7 +10,8 @@
           <div class="row">
             <div class="col-md-4">
               <img v-if="product.imagen" :src="`${baseUrl}/uploads/${product.imagen}`" :alt="product.name"
-                class="img-fluid rounded mb-3">
+                class="img-fluid rounded mb-3" style="cursor: pointer;"
+                @click="openImageModal(`${baseUrl}/uploads/${product.imagen}`)">
               <div v-else class="text-center text-muted border rounded p-4 mb-3">
                 <font-awesome-icon icon="image" size="3x" />
                 <p class="mt-2">Sin imagen</p>
@@ -83,6 +84,7 @@
         </div>
       </div>
     </div>
+    <ImageModal :image-url="selectedImageUrl" :visible="showImageModal" @close="closeImageModal" />
   </div>
 </template>
 

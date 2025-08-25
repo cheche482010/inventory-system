@@ -10,6 +10,7 @@ import ProductForm from '@/components/Products/ProductForm/ProductForm.vue';
 import ExportDropdown from '@/components/Products/ExportDropdown/ExportDropdown.vue';
 import Pagination from '@/components/Pagination/Pagination.vue';
 import FilterSection from '@/components/FilterSection/FilterSection.vue';
+import ImageModal from '@/components/ImageModal/ImageModal.vue';
 import { storeToRefs } from 'pinia';
 
 export default {
@@ -20,6 +21,7 @@ export default {
     ExportDropdown,
     Pagination,
     FilterSection,
+    ImageModal,
   },
   setup() {
     const authStore = useAuthStore();
@@ -55,10 +57,22 @@ export default {
     const selectedProduct = ref(null);
     const showProductForm = ref(false);
     const editingProduct = ref(null);
+    const showImageModal = ref(false);
+    const selectedImageUrl = ref('');
 
     const canCreate = computed(() => authStore.hasPermission('products:create'));
     const canDelete = computed(() => authStore.hasPermission('products:delete'));
     const canExport = computed(() => authStore.hasPermission('products:export'));
+
+    const openImageModal = (imageUrl) => {
+      selectedImageUrl.value = imageUrl;
+      showImageModal.value = true;
+    };
+
+    const closeImageModal = () => {
+      showImageModal.value = false;
+      selectedImageUrl.value = '';
+    };
 
     const loadBrands = async () => {
       try {
@@ -221,6 +235,10 @@ export default {
       handleFormSuccess,
       sort,
       filterConfig,
+      showImageModal,
+      selectedImageUrl,
+      openImageModal,
+      closeImageModal,
       // For cart
       userRole,
       quantities,

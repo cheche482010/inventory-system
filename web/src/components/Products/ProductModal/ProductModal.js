@@ -1,5 +1,11 @@
+import { ref } from 'vue';
+import ImageModal from '@/components/ImageModal/ImageModal.vue';
+
 export default {
     name: 'ProductModal',
+    components: {
+        ImageModal,
+    },
     props: {
         product: {
             type: Object,
@@ -8,6 +14,18 @@ export default {
     },
     emits: ['close'],
     setup() {
+        const showImageModal = ref(false);
+        const selectedImageUrl = ref('');
+
+        const openImageModal = (imageUrl) => {
+            selectedImageUrl.value = imageUrl;
+            showImageModal.value = true;
+        };
+
+        const closeImageModal = () => {
+            showImageModal.value = false;
+            selectedImageUrl.value = '';
+        };
         const formatDate = (date) => {
             return new Date(date).toLocaleDateString('es-ES', {
                 year: 'numeric',
@@ -24,7 +42,11 @@ export default {
 
         return {
             formatDate,
-            baseUrl
+            baseUrl,
+            showImageModal,
+            selectedImageUrl,
+            openImageModal,
+            closeImageModal,
         }
     }
 }

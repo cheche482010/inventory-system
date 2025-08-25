@@ -87,8 +87,10 @@
                     parseInt(filters.perPage)) + index + 1 }}</td>
                   <td>
                     <img v-if="product.imagen" :src="`${baseUrl}/uploads/${product.imagen}`" :alt="product.name"
-                      class="product-image img-thumbnail" style="width: 50px; height: 50px; object-fit: cover;">
-                    <span v-else class="text-muted small">Sin imagen</span> 
+                      class="product-image img-thumbnail"
+                      style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;"
+                      @click="openImageModal(`${baseUrl}/uploads/${product.imagen}`)">
+                    <span v-else class="text-muted small">Sin imagen</span>
                   </td>
                   <td>{{ product.code }}</td>
                   <td>{{ product.name.substring(0, 60) }}...</td>
@@ -139,6 +141,9 @@
 
     <!-- Product View Modal -->
     <ProductModal v-if="selectedProduct" :product="selectedProduct" @close="selectedProduct = null" />
+
+    <!-- Image Modal -->
+    <ImageModal :image-url="selectedImageUrl" :visible="showImageModal" @close="closeImageModal" />
 
     <!-- Product Form Modal -->
     <div v-if="showProductForm" class="modal show d-block" tabindex="-1">
