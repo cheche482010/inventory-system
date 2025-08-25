@@ -2,49 +2,62 @@
   <div class="my-requests-view">
     <h1>Mis Solicitudes de Presupuesto</h1>
 
-    <div v-if="loading" class="text-center">
-      <div class="spinner-border text-primary" role="status"></div>
-    </div>
+    <FilterSection v-model="filters" :config="filterConfig" @filter="applyFilters" @clear="clearFilters" />
 
-    <div v-else-if="myBudgets.length === 0" class="alert alert-info">
-      No has enviado ninguna solicitud de presupuesto.
-    </div>
-
-    <div v-else class="card">
+    <div class="card">
       <div class="card-body">
-        <div class="table-responsive">
-          <table class="table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Fecha</th>
-                <th>Items</th>
-                <th>Total</th>
-                <th>Total (Bs.)</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="budget in myBudgets" :key="budget.id">
-                <td>#{{ budget.id }}</td>
-                <td>{{ new Date(budget.updatedAt).toLocaleDateString() }}</td>
-                <td>{{ budget.items.length }}</td>
-                <td>{{ formatCurrency(calculateTotal(budget.items)) }}</td>
-                <td>
-                  <span v-if="rate">{{ formatCurrency(calculateTotal(budget.items) * rate, 'Bs.', 'after') }}</span>
-                  <span v-else>Calculando...</span>
-                </td>
-                <td>
-                  <button class="btn btn-sm btn-info me-2 text-white" @click="viewBudget(budget)">
-                    <font-awesome-icon icon="eye" /> Ver
-                  </button>
-                  <button class="btn btn-sm btn-secondary me-2" @click="download(budget.id)">
-                    <font-awesome-icon icon="file-pdf" /> PDF
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div v-if="loading" class="text-center">
+          <div class="spinner-border text-primary" role="status"></div>
+        </div>
+
+        <div v-else-if="hasNoResults" class="alert alert-info">
+          No se encontraron solicitudes que coincidan con los filtros aplicados.
+        </div>
+
+        <div v-else>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th @click="sort('updatedAt')" class="sortable">
+                    Fecha
+                    <font-awesome-icon v-if="filters.sortBy === 'updatedAt'"
+                      :icon="filters.sortOrder === 'asc' ? 'sort-up' : 'sort-down'" />
+                    <font-awesome-icon v-else icon="sort" class="text-muted" />
+                  </th>
+                  <th>Items</th>
+                  <th>Total</th>
+                  <th>Total (Bs.)</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(budget, index) in myBudgets" :key="budget.id">
+                  <td>{{ filters.perPage === 'all' ? index + 1 : (pagination.currentPage - 1) * filters.perPage + index +
+                    1 }}</td>
+                  <td>{{ new Date(budget.updatedAt).toLocaleDateString() }}</td>
+                  <td>{{ budget.items.length }}</td>
+                  <td>{{ formatCurrency(calculateTotal(budget.items)) }}</td>
+                  <td>
+                    <span v-if="rate">{{ formatCurrency(calculateTotal(budget.items) * rate, 'Bs.', 'after')
+                    }}</span>
+                    <span v-else>Calculando...</span>
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-info me-2 text-white" @click="viewBudget(budget)">
+                      <font-awesome-icon icon="eye" /> Ver
+                    </button>
+                    <button class="btn btn-sm btn-secondary me-2" @click="download(budget)">
+                      <font-awesome-icon icon="download" /> Descargar
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <Pagination v-if="showPagination" :current-page="pagination.currentPage" :total-pages="pagination.totalPages"
+            @page-changed="changePage" />
         </div>
       </div>
     </div>

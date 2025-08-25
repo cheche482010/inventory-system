@@ -2,7 +2,8 @@ const express = require("express");
 const ExcelJS = require("exceljs");
 const { authenticateToken, authorize } = require("../middleware/auth");
 const { successResponse, errorResponse } = require("../helpers/responseHelper");
-const { Cart, CartItem, Product, User } = require("../models");
+const { Cart, CartItem, Product, User, Sequelize } = require("../models");
+const { Op } = Sequelize;
 
 const router = express.Router();
 
@@ -22,18 +23,74 @@ router.use(authenticateToken);
  */
 router.get("/", authorize('admin', 'dev'), async (req, res) => {
     try {
-        const budgets = await Cart.findAll({
-            where: {
-                status: 'submitted'
-            },
+        const page = parseInt(req.query.page || '1', 10);
+        let perPage = req.query.perPage;
+        const { sortBy = 'updatedAt', sortOrder = 'DESC', search = '' } = req.query;
+        
+        let limit = null;
+        let offset = null;
+
+        if (perPage !== 'all') {
+            perPage = parseInt(perPage || '10', 10);
+            limit = perPage;
+            offset = (page - 1) * perPage;
+        }
+
+        const whereClause = { status: 'submitted' };
+
+        if (search) {
+            const searchConditions = [
+                { '$user.firstName$': { [Op.like]: `%${search}%` } },
+                { '$user.lastName$': { [Op.like]: `%${search}%` } },
+                { '$user.email$': { [Op.like]: `%${search}%` } },
+            ];
+
+            if (!isNaN(search)) {
+                searchConditions.push({ id: parseInt(search, 10) });
+            }
+
+            if (/^\d{4}-\d{2}-\d{2}$/.test(search)) {
+                searchConditions.push(
+                    Sequelize.where(Sequelize.fn('DATE', Sequelize.col('Cart.updatedAt')), '=', search)
+                );
+            }
+            
+            whereClause[Op.or] = searchConditions;
+        }
+
+        const order = [];
+        if (sortBy.includes('.')) {
+            const [model, field] = sortBy.split('.');
+            order.push([model, field, sortOrder]); // Correct syntax for aliased includes
+        } else {
+            order.push([sortBy, sortOrder]);
+        }
+
+        const { count, rows: budgets } = await Cart.findAndCountAll({
+            where: whereClause,
             include: [
-                { model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email'] },
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'firstName', 'lastName', 'email'],
+                },
                 { model: CartItem, as: 'items', include: [{ model: Product, as: 'product' }] }
             ],
-            order: [['updatedAt', 'DESC']]
+            order: order,
+            limit: limit,
+            offset: offset,
+            distinct: true,
+            subQuery: false,
         });
-        successResponse(res, budgets);
+
+        successResponse(res, {
+            budgets,
+            total: count,
+            currentPage: page,
+            totalPages: limit ? Math.ceil(count / limit) : 1
+        });
     } catch (error) {
+        console.error(error);
         errorResponse(res, "Error al obtener las solicitudes de presupuesto");
     }
 });
@@ -52,19 +109,50 @@ router.get("/", authorize('admin', 'dev'), async (req, res) => {
  */
 router.get("/my", async (req, res) => {
     try {
-        const budgets = await Cart.findAll({
-            where: {
-                userId: req.user.id,
-                status: 'submitted'
-            },
+        const page = parseInt(req.query.page || '1', 10);
+        let perPage = req.query.perPage;
+        const { sortBy = 'updatedAt', sortOrder = 'DESC', search = '' } = req.query;
+
+        let limit = null;
+        let offset = null;
+
+        if (perPage !== 'all') {
+            perPage = parseInt(perPage || '10', 10);
+            limit = perPage;
+            offset = (page - 1) * perPage;
+        }
+
+        const whereClause = {
+            userId: req.user.id,
+            status: 'submitted',
+        };
+
+        if (search) {
+            whereClause[Op.or] = [
+                { id: { [Op.like]: `%${search}%` } },
+            ];
+        }
+
+        const { count, rows: budgets } = await Cart.findAndCountAll({
+            where: whereClause,
             include: [
                 { model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email'] },
                 { model: CartItem, as: 'items', include: [{ model: Product, as: 'product' }] }
             ],
-            order: [['updatedAt', 'ASC']]
+            order: [[sortBy, sortOrder]],
+            limit: limit,
+            offset: offset,
+            distinct: true,
         });
-        successResponse(res, budgets);
+
+        successResponse(res, {
+            budgets,
+            total: count,
+            currentPage: page,
+            totalPages: limit ? Math.ceil(count / limit) : 1
+        });
     } catch (error) {
+        console.error(error);
         errorResponse(res, "Error al obtener tus solicitudes de presupuesto");
     }
 });
@@ -148,10 +236,10 @@ router.get("/:id/download-excel", authorize('admin', 'dev'), async (req, res) =>
             where: { id: req.params.id },
             include: [
                 { model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email'] },
-                {
-                    model: CartItem,
-                    as: 'items',
-                    include: [{ model: Product, as: 'product' }]
+                { 
+                    model: CartItem, 
+                    as: 'items', 
+                    include: [{ model: Product, as: 'product' }] 
                 }
             ]
         });
@@ -174,7 +262,7 @@ router.get("/:id/download-excel", authorize('admin', 'dev'), async (req, res) =>
         worksheet.getCell('A2').value = `Cliente: ${cart.user.firstName} ${cart.user.lastName} (${cart.user.email})`;
         worksheet.mergeCells('A3:E3');
         worksheet.getCell('A3').value = `Fecha: ${new Date(cart.updatedAt).toLocaleDateString()}`;
-
+        
         worksheet.addRow([]); // Empty row for spacing
 
         // Table Header

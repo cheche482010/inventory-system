@@ -1,12 +1,14 @@
-import { onMounted, computed } from 'vue';
+import { onMounted } from 'vue';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { storeToRefs } from 'pinia';
+import { useRouter } from 'vue-router';
 
 export default {
   name: 'NotificationBell',
   setup() {
     const notificationStore = useNotificationStore();
     const { notifications, unreadCount, hasUnread } = storeToRefs(notificationStore);
+    const router = useRouter();
 
     onMounted(() => {
       notificationStore.fetchNotifications();
@@ -37,6 +39,11 @@ export default {
 
     const markAsRead = (notification) => {
       notificationStore.markAsRead(notification);
+
+      const parsedMessage = parseNotificationMessage(notification.message);
+      if (parsedMessage.budgetId) {
+        router.push(`/budgets?highlight=${parsedMessage.budgetId}`);
+      }
     };
 
     const markAllAsRead = () => {

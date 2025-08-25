@@ -6,12 +6,12 @@ import axios from "axios"
 import { useAuthStore } from "@/stores/auth"
 
 export const budgetService = {
-  getAll() {
-    return api.get("/budgets")
+  getAll(params = {}) {
+    return api.get("/budgets", { params })
   },
 
-  getMyBudgets() {
-    return api.get("/budgets/my")
+  getMyBudgets(params = {}) {
+    return api.get("/budgets/my", { params })
   },
 
   getBudget(id) {
