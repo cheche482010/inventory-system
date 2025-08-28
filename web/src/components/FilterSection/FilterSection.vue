@@ -9,6 +9,13 @@
                         @input="updateDebounced('search', $event.target.value)" />
                 </div>
 
+                <!-- Date Filter -->
+                <div v-if="hasDateFilter" class="col-md-3">
+                    <label class="form-label">Fecha</label>
+                    <input type="date" class="form-control" :value="modelValue.date"
+                        @change="updateAndFilter('date', $event.target.value)" />
+                </div>
+
                 <!-- Per Page -->
                 <div v-if="hasPerPage" class="col-md-2">
                     <label class="form-label">Mostrar</label>

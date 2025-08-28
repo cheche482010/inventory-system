@@ -25,27 +25,67 @@ export default {
         const selectedBudget = ref(null);
 
         const filterConfig = computed(() => [
-            { type: 'search', key: 'search', col: 'col-md-4', placeholder: 'Buscar por ID...' },
+            { type: 'search', key: 'search', col: 'col-md-3', placeholder: 'Buscar por total...' },
+            { type: 'date', key: 'date', col: 'col-md-3' },
             { type: 'perPage', key: 'perPage', col: 'col-md-2' },
         ]);
 
+        const filteredBudgets = computed(() => {
+            let filtered = [...myBudgets.value];
+            
+            if (filters.value.search) {
+                const searchTerm = filters.value.search.toLowerCase();
+                filtered = filtered.filter(budget => {
+                    const total = calculateTotal(budget.items);
+                    const totalBs = rate.value ? (total * rate.value) : 0;
+                    
+                    return total.toString().includes(searchTerm) ||
+                           (rate.value && totalBs.toString().includes(searchTerm));
+                });
+            }
+            
+            if (filters.value.date) {
+                filtered = filtered.filter(budget => {
+                    const budgetDate = new Date(budget.updatedAt).toISOString().split('T')[0];
+                    return budgetDate === filters.value.date;
+                });
+            }
+            
+            return filtered;
+        });
+        
+        const paginatedBudgets = computed(() => {
+            if (filters.value.perPage === 'all') {
+                return filteredBudgets.value;
+            }
+            
+            const perPage = parseInt(filters.value.perPage);
+            const start = (pagination.value.currentPage - 1) * perPage;
+            return filteredBudgets.value.slice(start, start + perPage);
+        });
+        
+        const totalPages = computed(() => {
+            if (filters.value.perPage === 'all') return 1;
+            return Math.ceil(filteredBudgets.value.length / parseInt(filters.value.perPage));
+        });
+        
         const applyFilters = () => {
-            budgetStore.fetchBudgets(true);
+            pagination.value.currentPage = 1;
         };
 
         const clearFilters = () => {
             budgetStore.setFilters({
                 search: '',
-                perPage: 10,
+                date: '',
+                perPage: '10',
                 sortBy: 'updatedAt',
                 sortOrder: 'DESC',
             });
-            budgetStore.fetchBudgets(true);
+            pagination.value.currentPage = 1;
         };
 
         const changePage = (page) => {
-            budgetStore.setPage(page);
-            budgetStore.fetchBudgets(true);
+            pagination.value.currentPage = page;
         };
 
         const sort = (field) => {
@@ -80,12 +120,16 @@ export default {
         };
 
         return {
-            myBudgets,
+            myBudgets: paginatedBudgets,
             loading,
-            pagination,
+            pagination: computed(() => ({
+                currentPage: pagination.value.currentPage,
+                totalPages: totalPages.value,
+                total: filteredBudgets.value.length
+            })),
             filters,
-            hasNoResults,
-            showPagination,
+            hasNoResults: computed(() => !loading.value && filteredBudgets.value.length === 0),
+            showPagination: computed(() => totalPages.value > 1),
             selectedBudget,
             rate,
             filterConfig,
