@@ -1,9 +1,8 @@
 const express = require("express")
 const { param, body } = require("express-validator")
-const { User, Permission, UserPermission } = require("../models")
 const { authenticateToken, checkPermission } = require("../middleware/auth")
-const { successResponse, errorResponse } = require("../helpers/responseHelper")
 const { handleValidationErrors } = require("../helpers/validationHelper")
+const { getPermissions, assignPermission, revokePermission } = require("../controllers/userPermissionsController")
 
 const router = express.Router({ mergeParams: true })
 
@@ -40,21 +39,7 @@ const canGetUserPermissions = async (req, res, next) => {
 router.get(
   "/",
   [authenticateToken, canGetUserPermissions],
-  async (req, res) => {
-    try {
-      const user = await User.findByPk(req.params.userId, {
-        include: [{ model: Permission, as: "permissions" }],
-      })
-
-      if (!user) {
-        return errorResponse(res, "Usuario no encontrado", 404)
-      }
-
-      successResponse(res, user.permissions)
-    } catch (error) {
-      errorResponse(res, "Error al obtener permisos del usuario")
-    }
-  },
+  getPermissions,
 )
 
 /**
@@ -92,28 +77,7 @@ router.post(
     body("permissionId").isInt().withMessage("permissionId debe ser un número"),
   ],
   handleValidationErrors,
-  async (req, res) => {
-    try {
-      const { userId } = req.params
-      const { permissionId } = req.body
-
-      const user = await User.findByPk(userId)
-      if (!user) {
-        return errorResponse(res, "Usuario no encontrado", 404)
-      }
-
-      const permission = await Permission.findByPk(permissionId)
-      if (!permission) {
-        return errorResponse(res, "Permiso no encontrado", 404)
-      }
-
-      await UserPermission.create({ userId, permissionId })
-
-      successResponse(res, null, "Permiso asignado exitosamente", 201)
-    } catch (error) {
-      errorResponse(res, "Error al asignar permiso")
-    }
-  },
+  assignPermission,
 )
 
 /**
@@ -147,23 +111,7 @@ router.delete(
     param("permissionId").isInt().withMessage("permissionId debe ser un número"),
   ],
   handleValidationErrors,
-  async (req, res) => {
-    try {
-      const { userId, permissionId } = req.params
-
-      const result = await UserPermission.destroy({
-        where: { userId, permissionId },
-      })
-
-      if (result === 0) {
-        return errorResponse(res, "El usuario no tiene este permiso", 404)
-      }
-
-      successResponse(res, null, "Permiso revocado exitosamente")
-    } catch (error) {
-      errorResponse(res, "Error al revocar permiso")
-    }
-  },
+  revokePermission,
 )
 
 module.exports = router

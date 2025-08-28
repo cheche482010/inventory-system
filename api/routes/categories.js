@@ -1,11 +1,9 @@
 const express = require("express")
 const { body, param } = require("express-validator")
-const { Category, Product } = require("../models")
-const { authenticateToken, authorize, checkPermission } = require("../middleware/auth")
+const { authenticateToken, checkPermission } = require("../middleware/auth")
 const { logActivity } = require("../middleware/activityLogger")
-const { successResponse, errorResponse, paginatedResponse } = require("../helpers/responseHelper")
 const { handleValidationErrors } = require("../helpers/validationHelper")
-const { Op } = require("sequelize")
+const { getAll, getAllCategories, getById, create, update, remove } = require("../controllers/categoriesController")
 
 const router = express.Router()
 
@@ -92,55 +90,7 @@ const router = express.Router()
  *                 pagination:
  *                   $ref: '#/components/schemas/Pagination'
  */
-router.get("/", authenticateToken, async (req, res) => {
-  try {
-    const page = Number.parseInt(req.query.page) || 1
-    const limit = Number.parseInt(req.query.limit) || 10
-    const offset = (page - 1) * limit
-    const { search, sortBy, sortOrder } = req.query
-
-    const where = { isActive: true }
-
-    if (search) {
-      where[Op.or] = [{ name: { [Op.like]: `%${search}%` } }, { description: { [Op.like]: `%${search}%` } }]
-    }
-
-    const order = sortBy && sortOrder ? [[sortBy, sortOrder]] : [["name", "ASC"]]
-
-    const { count, rows } = await Category.findAndCountAll({
-      where,
-      include: [
-        {
-          model: Product,
-          as: "products",
-          attributes: ["id"],
-          where: { isActive: true },
-          required: false,
-        },
-      ],
-      limit,
-      offset,
-      order,
-      distinct: true,
-    })
-
-    const categoriesWithProductCount = rows.map((category) => ({
-      ...category.toJSON(),
-      productCount: category.products ? category.products.length : 0,
-    }))
-
-    const pagination = {
-      currentPage: page,
-      totalPages: Math.ceil(count / limit),
-      totalItems: count,
-      itemsPerPage: limit,
-    }
-
-    paginatedResponse(res, categoriesWithProductCount, pagination)
-  } catch (error) {
-    errorResponse(res, "Error al obtener categorías")
-  }
-})
+router.get("/", authenticateToken, getAll)
 
 /**
  * @swagger
@@ -154,14 +104,7 @@ router.get("/", authenticateToken, async (req, res) => {
  *       200:
  *         description: Lista de todas las categorías
  */
-router.get("/all", authenticateToken, async (req, res) => {
-  try {
-    const categories = await Category.findAll({ where: { isActive: true }, order: [["name", "ASC"]] })
-    successResponse(res, categories)
-  } catch (error) {
-    errorResponse(res, "Error al obtener todas las categorías")
-  }
-})
+router.get("/all", authenticateToken, getAllCategories)
 
 /**
  * @swagger
@@ -199,30 +142,7 @@ router.get(
   "/:id",
   [authenticateToken, param("id").isInt().withMessage("ID debe ser un número")],
   handleValidationErrors,
-  async (req, res) => {
-    try {
-      const category = await Category.findOne({
-        where: { id: req.params.id, isActive: true },
-        include: [
-          {
-            model: Product,
-            as: "products",
-            attributes: ["id", "code", "name", "price", "status"],
-            where: { isActive: true },
-            required: false,
-          },
-        ],
-      })
-
-      if (!category) {
-        return errorResponse(res, "Categoría no encontrada", 404)
-      }
-
-      successResponse(res, category)
-    } catch (error) {
-      errorResponse(res, "Error al obtener categoría")
-    }
-  },
+  getById,
 )
 
 /**
@@ -273,17 +193,7 @@ router.post(
   [authenticateToken, checkPermission("categories", "create"), body("name").notEmpty().withMessage("Nombre requerido")],
   handleValidationErrors,
   logActivity("CREATE", "CATEGORY"),
-  async (req, res) => {
-    try {
-      const category = await Category.create(req.body)
-      successResponse(res, category, "Categoría creada exitosamente", 201)
-    } catch (error) {
-      if (error.name === "SequelizeUniqueConstraintError") {
-        return errorResponse(res, "Ya existe una categoría con ese nombre", 400)
-      }
-      errorResponse(res, "Error al crear categoría")
-    }
-  },
+  create,
 )
 
 /**
@@ -333,25 +243,7 @@ router.put(
   ],
   handleValidationErrors,
   logActivity("UPDATE", "CATEGORY"),
-  async (req, res) => {
-    try {
-      const category = await Category.findOne({
-        where: { id: req.params.id, isActive: true },
-      })
-
-      if (!category) {
-        return errorResponse(res, "Categoría no encontrada", 404)
-      }
-
-      await category.update(req.body)
-      successResponse(res, category, "Categoría actualizada exitosamente")
-    } catch (error) {
-      if (error.name === "SequelizeUniqueConstraintError") {
-        return errorResponse(res, "Ya existe una categoría con ese nombre", 400)
-      }
-      errorResponse(res, "Error al actualizar categoría")
-    }
-  },
+  update,
 )
 
 /**
@@ -382,35 +274,7 @@ router.delete(
   [authenticateToken, checkPermission("categories", "delete"), param("id").isInt().withMessage("ID debe ser un número")],
   handleValidationErrors,
   logActivity("DELETE", "CATEGORY"),
-  async (req, res) => {
-    try {
-      const category = await Category.findOne({
-        where: { id: req.params.id, isActive: true },
-        include: [
-          {
-            model: Product,
-            as: "products",
-            where: { isActive: true },
-            required: false,
-          },
-        ],
-      })
-
-      if (!category) {
-        return errorResponse(res, "Categoría no encontrada", 404)
-      }
-
-      // Check if category has active products
-      if (category.products && category.products.length > 0) {
-        return errorResponse(res, "No se puede eliminar una categoría con productos asociados", 403)
-      }
-
-      await category.update({ isActive: false })
-      successResponse(res, null, "Categoría eliminada exitosamente")
-    } catch (error) {
-      errorResponse(res, "Error al eliminar categoría")
-    }
-  },
+  remove,
 )
 
 module.exports = router

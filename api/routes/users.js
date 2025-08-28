@@ -1,11 +1,9 @@
 const express = require("express")
 const { body, param } = require("express-validator")
-const { User, ActivityLog } = require("../models")
-const { authenticateToken, authorize, checkPermission } = require("../middleware/auth")
+const { authenticateToken, checkPermission } = require("../middleware/auth")
 const { logActivity } = require("../middleware/activityLogger")
-const { successResponse, errorResponse, paginatedResponse } = require("../helpers/responseHelper")
 const { handleValidationErrors } = require("../helpers/validationHelper")
-const { Op } = require("sequelize")
+const { search, getAll, getById, create, update, remove } = require("../controllers/usersController")
 
 const router = express.Router()
 
@@ -154,48 +152,7 @@ const router = express.Router()
  *                 pagination:
  *                   $ref: '#/components/schemas/Pagination'
  */
-router.get("/search", [authenticateToken, checkPermission("users", "read")], async (req, res) => {
-  try {
-    const page = Number.parseInt(req.query.page) || 1
-    const limit = Number.parseInt(req.query.limit) || 10
-    const offset = (page - 1) * limit
-    const { search, role, isActive, sortBy, sortOrder } = req.query
-
-    const where = {}
-
-    if (search) {
-      where[Op.or] = [
-        { firstName: { [Op.like]: `%${search}%` } },
-        { lastName: { [Op.like]: `%${search}%` } },
-        { email: { [Op.like]: `%${search}%` } },
-      ]
-    }
-
-    if (role) where.role = role
-    if (isActive !== undefined) where.isActive = isActive === "true"
-
-    const order = sortBy && sortOrder ? [[sortBy, sortOrder]] : [["createdAt", "DESC"]]
-
-    const { count, rows } = await User.findAndCountAll({
-      where,
-      attributes: { exclude: ["password"] },
-      limit,
-      offset,
-      order,
-    })
-
-    const pagination = {
-      currentPage: page,
-      totalPages: Math.ceil(count / limit),
-      totalItems: count,
-      itemsPerPage: limit,
-    }
-
-    paginatedResponse(res, rows, pagination)
-  } catch (error) {
-    errorResponse(res, "Error al buscar usuarios")
-  }
-})
+router.get("/search", [authenticateToken, checkPermission("users", "read")], search)
 
 /**
  * @swagger
@@ -253,61 +210,7 @@ router.get("/search", [authenticateToken, checkPermission("users", "read")], asy
  *                 pagination:
  *                   $ref: '#/components/schemas/Pagination'
  */
-router.get("/", [authenticateToken, checkPermission("users", "read")], async (req, res) => {
-  try {
-    const page = Number.parseInt(req.query.page) || 1
-    const limit = Number.parseInt(req.query.limit) || 10
-    const offset = (page - 1) * limit
-    const { search, role, isActive, sortBy, sortOrder } = req.query
-
-    const where = {}
-
-    if (search) {
-      where[Op.or] = [
-        { firstName: { [Op.like]: `%${search}%` } },
-        { lastName: { [Op.like]: `%${search}%` } },
-        { email: { [Op.like]: `%${search}%` } },
-      ]
-    }
-
-    if (role) where.role = role
-    if (isActive !== undefined) where.isActive = isActive === "true"
-
-    const order = sortBy && sortOrder ? [[sortBy, sortOrder]] : [["createdAt", "DESC"]]
-
-    const { count, rows } = await User.findAndCountAll({
-      where,
-      attributes: { exclude: ["password"] },
-      include: [
-        {
-          model: ActivityLog,
-          as: "activities",
-          attributes: ["id"],
-          required: false,
-        },
-      ],
-      limit,
-      offset,
-      order,
-    })
-
-    const usersWithActivityCount = rows.map((user) => ({
-      ...user.toJSON(),
-      activityCount: user.activities ? user.activities.length : 0,
-    }))
-
-    const pagination = {
-      currentPage: page,
-      totalPages: Math.ceil(count / limit),
-      totalItems: count,
-      itemsPerPage: limit,
-    }
-
-    paginatedResponse(res, usersWithActivityCount, pagination)
-  } catch (error) {
-    errorResponse(res, "Error al obtener usuarios")
-  }
-})
+router.get("/", [authenticateToken, checkPermission("users", "read")], getAll)
 
 /**
  * @swagger
@@ -345,29 +248,7 @@ router.get(
   "/:id",
   [authenticateToken, checkPermission("users", "read"), param("id").isInt().withMessage("ID debe ser un número")],
   handleValidationErrors,
-  async (req, res) => {
-    try {
-      const user = await User.findByPk(req.params.id, {
-        attributes: { exclude: ["password"] },
-        include: [
-          {
-            model: ActivityLog,
-            as: "activities",
-            limit: 10,
-            order: [["createdAt", "DESC"]],
-          },
-        ],
-      })
-
-      if (!user) {
-        return errorResponse(res, "Usuario no encontrado", 404)
-      }
-
-      successResponse(res, user)
-    } catch (error) {
-      errorResponse(res, "Error al obtener usuario")
-    }
-  },
+  getById,
 )
 
 /**
@@ -414,18 +295,7 @@ router.post(
   ],
   handleValidationErrors,
   logActivity("CREATE", "USER"),
-  async (req, res) => {
-    try {
-      const user = await User.create(req.body)
-      const { password, ...userWithoutPassword } = user.toJSON()
-      successResponse(res, userWithoutPassword, "Usuario creado exitosamente", 201)
-    } catch (error) {
-      if (error.name === "SequelizeUniqueConstraintError") {
-        return errorResponse(res, "Ya existe un usuario con ese email", 400)
-      }
-      errorResponse(res, "Error al crear usuario")
-    }
-  },
+  create,
 )
 
 /**
@@ -497,29 +367,7 @@ router.put(
   ],
   handleValidationErrors,
   logActivity("UPDATE", "USER"),
-  async (req, res) => {
-    try {
-      const user = await User.findByPk(req.params.id)
-
-      if (!user) {
-        return errorResponse(res, "Usuario no encontrado", 404)
-      }
-
-      // Prevent users from modifying themselves
-      if (user.id === req.user.id && req.body.hasOwnProperty("isActive")) {
-        return errorResponse(res, "No puedes desactivar tu propia cuenta", 403)
-      }
-
-      await user.update(req.body)
-      const { password, ...userWithoutPassword } = user.toJSON()
-      successResponse(res, userWithoutPassword, "Usuario actualizado exitosamente")
-    } catch (error) {
-      if (error.name === "SequelizeUniqueConstraintError") {
-        return errorResponse(res, "Ya existe un usuario con ese email", 400)
-      }
-      errorResponse(res, "Error al actualizar usuario")
-    }
-  },
+  update,
 )
 
 /**
@@ -550,25 +398,7 @@ router.delete(
   [authenticateToken, checkPermission("users", "delete"), param("id").isInt().withMessage("ID debe ser un número")],
   handleValidationErrors,
   logActivity("DELETE", "USER"),
-  async (req, res) => {
-    try {
-      const user = await User.findByPk(req.params.id)
-
-      if (!user) {
-        return errorResponse(res, "Usuario no encontrado", 404)
-      }
-
-      // Prevent users from deleting themselves
-      if (user.id === req.user.id) {
-        return errorResponse(res, "No puedes eliminar tu propia cuenta", 403)
-      }
-
-      await user.update({ isActive: false })
-      successResponse(res, null, "Usuario eliminado exitosamente")
-    } catch (error) {
-      errorResponse(res, "Error al eliminar usuario")
-    }
-  },
+  remove,
 )
 
 module.exports = router

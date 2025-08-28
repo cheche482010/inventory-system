@@ -1,7 +1,6 @@
 const express = require("express");
 const { authenticateToken } = require("../middleware/auth");
-const { successResponse, errorResponse } = require("../helpers/responseHelper");
-const { Notification } = require("../models");
+const { getAll, markAsRead, markAllAsRead } = require("../controllers/notificationsController");
 
 const router = express.Router();
 
@@ -19,17 +18,7 @@ router.use(authenticateToken);
  *       200:
  *         description: Lista de notificaciones
  */
-router.get("/", async (req, res) => {
-    try {
-        const notifications = await Notification.findAll({
-            where: { userId: req.user.id },
-            order: [['createdAt', 'DESC']]
-        });
-        successResponse(res, notifications);
-    } catch (error) {
-        errorResponse(res, "Error al obtener notificaciones");
-    }
-});
+router.get("/", getAll);
 
 /**
  * @swagger
@@ -49,22 +38,7 @@ router.get("/", async (req, res) => {
  *       200:
  *         description: Notificación actualizada
  */
-router.put("/:id/read", async (req, res) => {
-    try {
-        const notification = await Notification.findOne({
-            where: { id: req.params.id, userId: req.user.id }
-        });
-        if (notification) {
-            notification.read = true;
-            await notification.save();
-            successResponse(res, notification);
-        } else {
-            errorResponse(res, "Notificación no encontrada", 404);
-        }
-    } catch (error) {
-        errorResponse(res, "Error al actualizar la notificación");
-    }
-});
+router.put("/:id/read", markAsRead);
 
 /**
  * @swagger
@@ -78,16 +52,6 @@ router.put("/:id/read", async (req, res) => {
  *       200:
  *         description: Notificaciones actualizadas
  */
-router.put("/mark-all-read", async (req, res) => {
-    try {
-        await Notification.update(
-            { read: true },
-            { where: { userId: req.user.id, read: false } }
-        );
-        successResponse(res, null, "Todas las notificaciones marcadas como leídas");
-    } catch (error) {
-        errorResponse(res, "Error al actualizar notificaciones");
-    }
-});
+router.put("/mark-all-read", markAllAsRead);
 
 module.exports = router;
