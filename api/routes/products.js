@@ -1,14 +1,10 @@
 const express = require("express")
-const { body, query } = require("express-validator")
-const { Product, Brand, Category } = require("../models")
-const { authenticateToken, authorize, checkPermission } = require("../middleware/auth")
+const { body } = require("express-validator")
+const { authenticateToken, checkPermission } = require("../middleware/auth")
 const { logActivity } = require("../middleware/activityLogger")
-const { successResponse, errorResponse, paginatedResponse } = require("../helpers/responseHelper")
 const { handleValidationErrors } = require("../helpers/validationHelper")
-const { Op } = require("sequelize")
 const upload = require("../middleware/upload")
-const fs = require("fs")
-const path = require("path")
+const { getAll, getById, create, update, remove } = require("../controllers/productsController")
 
 const router = express.Router()
 
@@ -50,63 +46,7 @@ const router = express.Router()
  *       200:
  *         description: Lista de productos
  */
-router.get("/", authenticateToken, async (req, res) => {
-  try {
-    const page = Number.parseInt(req.query.page) || 1
-    const limit = req.query.limit === 'all' ? null : (Number.parseInt(req.query.limit) || 10)
-    const offset = limit ? (page - 1) * limit : 0
-    const { search, status, brandId, categoryId, sortBy, sortOrder } = req.query
-
-    const where = { isActive: true }
-
-    if (search) {
-      where[Op.or] = [{ code: { [Op.like]: `%${search}%` } }, { name: { [Op.like]: `%${search}%` } }]
-    }
-
-    if (status) where.status = status
-    if (brandId) where.brandId = brandId
-    if (categoryId) where.categoryId = categoryId
-
-    let order = [["name", "ASC"]]
-    if (sortBy && sortOrder) {
-      if (sortBy === 'brand.name') {
-        order = [[{ model: Brand, as: 'brand' }, 'name', sortOrder]]
-      } else if (sortBy === 'category.name') {
-        order = [[{ model: Category, as: 'category' }, 'name', sortOrder]]
-      } else {
-        order = [[sortBy, sortOrder]]
-      }
-    }
-
-    const queryOptions = {
-      where,
-      include: [
-        { model: Brand, as: "brand", attributes: ["id", "name"] },
-        { model: Category, as: "category", attributes: ["id", "name"] },
-      ],
-      order,
-    }
-
-    if (limit) {
-      queryOptions.limit = limit
-      queryOptions.offset = offset
-    }
-
-    const { count, rows } = await Product.findAndCountAll(queryOptions)
-
-    const pagination = {
-      currentPage: page,
-      totalPages: limit ? Math.ceil(count / limit) : 1,
-      totalItems: count,
-      itemsPerPage: limit || count,
-    }
-
-    paginatedResponse(res, rows, pagination)
-  } catch (error) {
-    console.log(error)
-    errorResponse(res, "Error al obtener productos")
-  }
-})
+router.get("/", authenticateToken, getAll)
 
 /**
  * @swagger
@@ -128,25 +68,7 @@ router.get("/", authenticateToken, async (req, res) => {
  *       404:
  *         description: Producto no encontrado
  */
-router.get("/:id", authenticateToken, async (req, res) => {
-  try {
-    const product = await Product.findOne({
-      where: { id: req.params.id, isActive: true },
-      include: [
-        { model: Brand, as: "brand" },
-        { model: Category, as: "category" },
-      ],
-    })
-
-    if (!product) {
-      return errorResponse(res, "Producto no encontrado", 404)
-    }
-
-    successResponse(res, product)
-  } catch (error) {
-    errorResponse(res, "Error al obtener producto")
-  }
-})
+router.get("/:id", authenticateToken, getById)
 
 /**
  * @swagger
@@ -186,7 +108,7 @@ router.post(
   [
     authenticateToken,
     checkPermission("products", "create"),
-    upload.single("imagen"), // Multer middleware for single file upload
+    upload.single("imagen"),
     body("code").notEmpty().withMessage("Código requerido"),
     body("name").notEmpty().withMessage("Nombre requerido"),
     body("price").isFloat({ min: 0 }).withMessage("Precio debe ser mayor a 0"),
@@ -196,30 +118,7 @@ router.post(
   ],
   handleValidationErrors,
   logActivity("CREATE", "PRODUCT"),
-  async (req, res) => {
-    try {
-      const productData = { ...req.body }
-      if (req.file) {
-        // Guardar solo la ruta relativa
-        productData.imagen = `products/${req.file.filename}`
-      }
-
-      const product = await Product.create(productData)
-      const productWithRelations = await Product.findByPk(product.id, {
-        include: [
-          { model: Brand, as: "brand" },
-          { model: Category, as: "category" },
-        ],
-      })
-
-      successResponse(res, productWithRelations, "Producto creado exitosamente", 201)
-    } catch (error) {
-      if (error.name === "SequelizeUniqueConstraintError") {
-        return errorResponse(res, "El código del producto ya existe", 400)
-      }
-      errorResponse(res, "Error al crear producto")
-    }
-  },
+  create,
 )
 
 /**
@@ -245,7 +144,7 @@ router.put(
   [
     authenticateToken,
     checkPermission("products", "update"),
-    upload.single("imagen"), // Multer middleware for single file upload
+    upload.single("imagen"),
     body("code").optional().notEmpty().withMessage("Código no puede estar vacío"),
     body("name").optional().notEmpty().withMessage("Nombre no puede estar vacío"),
     body("price").optional().isFloat({ min: 0 }).withMessage("Precio debe ser mayor a 0"),
@@ -255,43 +154,7 @@ router.put(
   ],
   handleValidationErrors,
   logActivity("UPDATE", "PRODUCT"),
-  async (req, res) => {
-    try {
-      const product = await Product.findOne({
-        where: { id: req.params.id, isActive: true },
-      })
-
-      if (!product) {
-        return errorResponse(res, "Producto no encontrado", 404)
-      }
-
-      const productData = { ...req.body }
-
-      if (req.file) {
-        // Si se sube una nueva imagen, eliminar la anterior si existe
-        if (product.imagen) {
-          const oldImagePath = path.join(__dirname, "..", "uploads", product.imagen)
-          if (fs.existsSync(oldImagePath)) {
-            fs.unlinkSync(oldImagePath)
-          }
-        }
-        productData.imagen = `products/${req.file.filename}`
-      }
-
-      await product.update(productData)
-
-      const updatedProduct = await Product.findByPk(product.id, {
-        include: [
-          { model: Brand, as: "brand" },
-          { model: Category, as: "category" },
-        ],
-      })
-
-      successResponse(res, updatedProduct, "Producto actualizado exitosamente")
-    } catch (error) {
-      errorResponse(res, "Error al actualizar producto")
-    }
-  },
+  update,
 )
 
 /**
@@ -312,21 +175,6 @@ router.put(
  *       200:
  *         description: Producto eliminado
  */
-router.delete("/:id", [authenticateToken, checkPermission("products", "delete")], logActivity("DELETE", "PRODUCT"), async (req, res) => {
-  try {
-    const product = await Product.findOne({
-      where: { id: req.params.id, isActive: true },
-    })
-
-    if (!product) {
-      return errorResponse(res, "Producto no encontrado", 404)
-    }
-
-    await product.update({ isActive: false })
-    successResponse(res, null, "Producto eliminado exitosamente")
-  } catch (error) {
-    errorResponse(res, "Error al eliminar producto")
-  }
-})
+router.delete("/:id", [authenticateToken, checkPermission("products", "delete")], logActivity("DELETE", "PRODUCT"), remove)
 
 module.exports = router

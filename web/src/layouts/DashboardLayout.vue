@@ -109,7 +109,7 @@
         <span class="navbar-brand mb-0 h1 ms-3 d-none d-md-block">Panel de Administración</span>
         <div class="ms-auto d-flex align-items-center">
           <!-- Notifications -->
-          <NotificationBell />
+          <NotificationBell v-if="userRole !== 'user'" />
 
           <!-- Cart Icon -->
           <router-link to="/cart" v-if="userRole === 'user' && isActive"

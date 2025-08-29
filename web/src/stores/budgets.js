@@ -13,7 +13,8 @@ export const useBudgetStore = defineStore('budgets', {
         },
         filters: {
             search: '',
-            perPage: 10,
+            date: '',
+            perPage: '10',
             sortBy: 'updatedAt',
             sortOrder: 'DESC',
         },
@@ -32,7 +33,8 @@ export const useBudgetStore = defineStore('budgets', {
             this.loading = true;
             try {
                 const service = isMyRequests ? budgetService.getMyBudgets : budgetService.getAll;
-                const response = await service(this.filters);
+                const params = { ...this.filters, perPage: 'all' };
+                const response = await service(params);
                 this.budgets = response.data.budgets;
                 this.pagination.total = response.data.total;
                 this.pagination.currentPage = response.data.currentPage;

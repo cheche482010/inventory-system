@@ -22,6 +22,7 @@ export default {
     setup(props, { emit }) {
         const hasSearch = computed(() => props.config.some(f => f.type === 'search'));
         const hasPerPage = computed(() => props.config.some(f => f.type === 'perPage'));
+        const hasDateFilter = computed(() => props.config.some(f => f.type === 'date'));
         const dynamicFilters = computed(() => props.config.filter(f => f.type === 'select'));
 
         const updateValue = (key, value) => {
@@ -48,6 +49,7 @@ export default {
         return {
             hasSearch,
             hasPerPage,
+            hasDateFilter,
             dynamicFilters,
             updateDebounced,
             updateAndFilter,

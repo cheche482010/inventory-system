@@ -1,11 +1,9 @@
 const express = require("express")
 const { body, param } = require("express-validator")
-const { Brand, Product } = require("../models")
-const { authenticateToken, authorize, checkPermission } = require("../middleware/auth")
+const { authenticateToken, checkPermission } = require("../middleware/auth")
 const { logActivity } = require("../middleware/activityLogger")
-const { successResponse, errorResponse, paginatedResponse } = require("../helpers/responseHelper")
 const { handleValidationErrors } = require("../helpers/validationHelper")
-const { Op } = require("sequelize")
+const { getAll, getAllBrands, getById, create, update, remove } = require("../controllers/brandsController")
 
 const router = express.Router()
 
@@ -88,55 +86,7 @@ const router = express.Router()
  *                 pagination:
  *                   $ref: '#/components/schemas/Pagination'
  */
-router.get("/", authenticateToken, async (req, res) => {
-  try {
-    const page = Number.parseInt(req.query.page) || 1
-    const limit = Number.parseInt(req.query.limit) || 10
-    const offset = (page - 1) * limit
-    const { search, sortBy, sortOrder } = req.query
-
-    const where = { isActive: true }
-
-    if (search) {
-      where.name = { [Op.like]: `%${search}%` }
-    }
-
-    const order = sortBy && sortOrder ? [[sortBy, sortOrder]] : [["id", "ASC"]]
-
-    const { count, rows } = await Brand.findAndCountAll({
-      where,
-      include: [
-        {
-          model: Product,
-          as: "products",
-          attributes: ["id"],
-          where: { isActive: true },
-          required: false,
-        },
-      ],
-      limit,
-      offset,
-      order,
-      distinct: true,
-    })
-
-    const brandsWithProductCount = rows.map((brand) => ({
-      ...brand.toJSON(),
-      productCount: brand.products ? brand.products.length : 0,
-    }))
-
-    const pagination = {
-      currentPage: page,
-      totalPages: Math.ceil(count / limit),
-      totalItems: count,
-      itemsPerPage: limit,
-    }
-
-    paginatedResponse(res, brandsWithProductCount, pagination)
-  } catch (error) {
-    errorResponse(res, "Error al obtener marcas")
-  }
-})
+router.get("/", authenticateToken, getAll)
 
 /**
  * @swagger
@@ -150,14 +100,7 @@ router.get("/", authenticateToken, async (req, res) => {
  *       200:
  *         description: Lista de todas las marcas
  */
-router.get("/all", authenticateToken, async (req, res) => {
-  try {
-    const brands = await Brand.findAll({ where: { isActive: true }, order: [["name", "ASC"]] })
-    successResponse(res, brands)
-  } catch (error) {
-    errorResponse(res, "Error al obtener todas las marcas")
-  }
-})
+router.get("/all", authenticateToken, getAllBrands)
 
 /**
  * @swagger
@@ -195,30 +138,7 @@ router.get(
   "/:id",
   [authenticateToken, param("id").isInt().withMessage("ID debe ser un número")],
   handleValidationErrors,
-  async (req, res) => {
-    try {
-      const brand = await Brand.findOne({
-        where: { id: req.params.id, isActive: true },
-        include: [
-          {
-            model: Product,
-            as: "products",
-            attributes: ["id", "code", "name", "price", "status"],
-            where: { isActive: true },
-            required: false,
-          },
-        ],
-      })
-
-      if (!brand) {
-        return errorResponse(res, "Marca no encontrada", 404)
-      }
-
-      successResponse(res, brand)
-    } catch (error) {
-      errorResponse(res, "Error al obtener marca")
-    }
-  },
+  getById,
 )
 
 /**
@@ -265,17 +185,7 @@ router.post(
   [authenticateToken, checkPermission("brands", "create"), body("name").notEmpty().withMessage("Nombre requerido")],
   handleValidationErrors,
   logActivity("CREATE", "BRAND"),
-  async (req, res) => {
-    try {
-      const brand = await Brand.create(req.body)
-      successResponse(res, brand, "Marca creada exitosamente", 201)
-    } catch (error) {
-      if (error.name === "SequelizeUniqueConstraintError") {
-        return errorResponse(res, "Ya existe una marca con ese nombre", 400)
-      }
-      errorResponse(res, "Error al crear marca")
-    }
-  },
+  create,
 )
 
 /**
@@ -321,25 +231,7 @@ router.put(
   ],
   handleValidationErrors,
   logActivity("UPDATE", "BRAND"),
-  async (req, res) => {
-    try {
-      const brand = await Brand.findOne({
-        where: { id: req.params.id, isActive: true },
-      })
-
-      if (!brand) {
-        return errorResponse(res, "Marca no encontrada", 404)
-      }
-
-      await brand.update(req.body)
-      successResponse(res, brand, "Marca actualizada exitosamente")
-    } catch (error) {
-      if (error.name === "SequelizeUniqueConstraintError") {
-        return errorResponse(res, "Ya existe una marca con ese nombre", 400)
-      }
-      errorResponse(res, "Error al actualizar marca")
-    }
-  },
+  update,
 )
 
 /**
@@ -370,35 +262,7 @@ router.delete(
   [authenticateToken, checkPermission("brands", "delete"), param("id").isInt().withMessage("ID debe ser un número")],
   handleValidationErrors,
   logActivity("DELETE", "BRAND"),
-  async (req, res) => {
-    try {
-      const brand = await Brand.findOne({
-        where: { id: req.params.id, isActive: true },
-        include: [
-          {
-            model: Product,
-            as: "products",
-            where: { isActive: true },
-            required: false,
-          },
-        ],
-      })
-
-      if (!brand) {
-        return errorResponse(res, "Marca no encontrada", 404)
-      }
-
-      // Check if brand has active products
-      if (brand.products && brand.products.length > 0) {
-        return errorResponse(res, "No se puede eliminar una marca con productos asociados", 403)
-      }
-
-      await brand.update({ isActive: false })
-      successResponse(res, null, "Marca eliminada exitosamente")
-    } catch (error) {
-      errorResponse(res, "Error al eliminar marca")
-    }
-  },
+  remove,
 )
 
 module.exports = router

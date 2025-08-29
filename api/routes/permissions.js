@@ -1,11 +1,9 @@
 const express = require("express")
 const { body, param } = require("express-validator")
-const { Permission, User } = require("../models")
 const { authenticateToken, authorize } = require("../middleware/auth")
 const { logActivity } = require("../middleware/activityLogger")
-const { successResponse, errorResponse, paginatedResponse } = require("../helpers/responseHelper")
 const { handleValidationErrors } = require("../helpers/validationHelper")
-const { Op, Sequelize } = require("sequelize")
+const { getAll, create, update, remove, getUserPermissions } = require("../controllers/permissionsController")
 
 const router = express.Router()
 
@@ -107,48 +105,7 @@ const router = express.Router()
  *                 pagination:
  *                   $ref: '#/components/schemas/Pagination'
  */
-router.get("/", [authenticateToken, authorize("dev")], async (req, res) => {
-  try {
-    const page = Number.parseInt(req.query.page) || 1
-    const limit = Number.parseInt(req.query.limit) || 20
-    const offset = (page - 1) * limit
-    const { search, resource, sortBy, sortOrder } = req.query
-
-    const where = { isActive: true }
-
-    if (search) {
-      const lowerCaseSearch = search.toLowerCase()
-      where[Op.or] = [
-        Sequelize.where(Sequelize.fn("LOWER", Sequelize.col("name")), { [Op.like]: "%" + lowerCaseSearch + "%" }),
-        Sequelize.where(Sequelize.fn("LOWER", Sequelize.col("description")), {
-          [Op.like]: "%" + lowerCaseSearch + "%",
-        }),
-      ]
-    }
-
-    if (resource) where.resource = resource
-
-    const order = sortBy && sortOrder ? [[sortBy, sortOrder]] : [["resource", "ASC"], ["action", "ASC"]]
-
-    const { count, rows } = await Permission.findAndCountAll({
-      where,
-      limit,
-      offset,
-      order,
-    })
-
-    const pagination = {
-      currentPage: page,
-      totalPages: Math.ceil(count / limit),
-      totalItems: count,
-      itemsPerPage: limit,
-    }
-
-    paginatedResponse(res, rows, pagination)
-  } catch (error) {
-    errorResponse(res, "Error al obtener permisos")
-  }
-})
+router.get("/", [authenticateToken, authorize("dev")], getAll)
 
 /**
  * @swagger
@@ -203,17 +160,7 @@ router.post(
   ],
   handleValidationErrors,
   logActivity("CREATE", "PERMISSION"),
-  async (req, res) => {
-    try {
-      const permission = await Permission.create(req.body)
-      successResponse(res, permission, "Permiso creado exitosamente", 201)
-    } catch (error) {
-      if (error.name === "SequelizeUniqueConstraintError") {
-        return errorResponse(res, "Ya existe un permiso con ese nombre", 400)
-      }
-      errorResponse(res, "Error al crear permiso")
-    }
-  },
+  create,
 )
 
 /**
@@ -249,25 +196,7 @@ router.put(
   ],
   handleValidationErrors,
   logActivity("UPDATE", "PERMISSION"),
-  async (req, res) => {
-    try {
-      const permission = await Permission.findOne({
-        where: { id: req.params.id, isActive: true },
-      })
-
-      if (!permission) {
-        return errorResponse(res, "Permiso no encontrado", 404)
-      }
-
-      await permission.update(req.body)
-      successResponse(res, permission, "Permiso actualizado exitosamente")
-    } catch (error) {
-      if (error.name === "SequelizeUniqueConstraintError") {
-        return errorResponse(res, "Ya existe un permiso con ese nombre", 400)
-      }
-      errorResponse(res, "Error al actualizar permiso")
-    }
-  },
+  update,
 )
 
 /**
@@ -296,22 +225,7 @@ router.delete(
   [authenticateToken, authorize("dev"), param("id").isInt().withMessage("ID debe ser un número")],
   handleValidationErrors,
   logActivity("DELETE", "PERMISSION"),
-  async (req, res) => {
-    try {
-      const permission = await Permission.findOne({
-        where: { id: req.params.id, isActive: true },
-      })
-
-      if (!permission) {
-        return errorResponse(res, "Permiso no encontrado", 404)
-      }
-
-      await permission.update({ isActive: false })
-      successResponse(res, null, "Permiso eliminado exitosamente")
-    } catch (error) {
-      errorResponse(res, "Error al eliminar permiso")
-    }
-  },
+  remove,
 )
 
 /**
@@ -339,28 +253,7 @@ router.get(
   "/user/:userId",
   [authenticateToken, authorize("dev"), param("userId").isInt().withMessage("ID debe ser un número")],
   handleValidationErrors,
-  async (req, res) => {
-    try {
-      const user = await User.findByPk(req.params.userId, {
-        include: [
-          {
-            model: Permission,
-            as: "permissions",
-            where: { isActive: true },
-            required: false,
-          },
-        ],
-      })
-
-      if (!user) {
-        return errorResponse(res, "Usuario no encontrado", 404)
-      }
-
-      successResponse(res, user.permissions, "Permisos del usuario obtenidos exitosamente")
-    } catch (error) {
-      errorResponse(res, "Error al obtener permisos del usuario")
-    }
-  },
+  getUserPermissions,
 )
 
 module.exports = router
