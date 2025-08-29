@@ -150,7 +150,6 @@ const submit = async (req, res) => {
       const dolarResponse = await axios.get('https://ve.dolarapi.com/v1/dolares/oficial')
       if (dolarResponse.data && dolarResponse.data.promedio) {
         dolarRate = dolarResponse.data.promedio
-        console.log(`Successfully fetched Dolar rate: ${dolarRate}`)
       }
     } catch (apiError) {
       console.error("Could not fetch Dolar rate. Proceeding without it.", apiError.message)

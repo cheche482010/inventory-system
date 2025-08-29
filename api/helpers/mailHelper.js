@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer');
 const { User, Notification } = require('../models');
 const { Op } = require("sequelize");
 const { generateBudgetPdf } = require('./pdfHelper');
+const { generateBudgetExcel } = require('./excelHelper');
 
 // SMTP configuration from environment variables
 const mailConfig = {
@@ -57,6 +58,7 @@ const sendNewBudgetAdminNotification = async (cart, budgetUser, dolarRate) => {
     if (!adminsAndDevs.length) return;
 
     const pdfBuffer = await generateBudgetPdf(cart, budgetUser, dolarRate);
+    const excelBuffer = await generateBudgetExcel(cart, budgetUser);
     const subject = `Nueva Solicitud de Presupuesto #${cart.id} de ${budgetUser.firstName}`;
     const notificationMessage = JSON.stringify({
         title: 'Nueva solicitud de presupuesto',
@@ -68,15 +70,22 @@ const sendNewBudgetAdminNotification = async (cart, budgetUser, dolarRate) => {
         const emailHtml = `
             <h1>Hola, ${admin.firstName}!</h1>
             <p>Se ha recibido una nueva solicitud de presupuesto de <b>${budgetUser.firstName} ${budgetUser.lastName}</b>.</p>
-            <p>Se adjunta el presupuesto en formato PDF.</p>
+            <p>Se adjunta el presupuesto en formato PDF y Excel.</p>
             <p>Puedes revisar la solicitud en el panel de administración.</p>
         `;
-        const attachments = [{
-            filename: `presupuesto_${cart.id}.pdf`,
-            content: pdfBuffer,
-            contentType: 'application/pdf'
-        }];
-        
+        const attachments = [
+            {
+                filename: `presupuesto_${cart.id}.pdf`,
+                content: pdfBuffer,
+                contentType: 'application/pdf'
+            },
+            {
+                filename: `presupuesto_${cart.id}.xlsx`,
+                content: excelBuffer,
+                contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            }
+        ];
+
         await sendEmail(admin.email, subject, emailHtml, attachments);
         await Notification.create({ userId: admin.id, message: notificationMessage, type: 'new_budget' });
     }
@@ -102,7 +111,7 @@ const sendBudgetConfirmationToUser = async (cart, budgetUser, dolarRate) => {
         content: pdfBuffer,
         contentType: 'application/pdf'
     }];
-    
+
     await sendEmail(budgetUser.email, subject, emailHtml, attachments);
 };
 
