@@ -1,6 +1,6 @@
 const express = require("express")
 const { param, body } = require("express-validator")
-const { authenticateToken, checkPermission } = require("../middleware/auth")
+const { authenticateToken, checkPermission, authorize } = require("../middleware/auth")
 const { handleValidationErrors } = require("../helpers/validationHelper")
 const { getPermissions, assignPermission, revokePermission } = require("../controllers/userPermissionsController")
 
@@ -73,7 +73,7 @@ router.post(
   "/",
   [
     authenticateToken,
-    checkPermission("users", "update"),
+    authorize("dev"),
     body("permissionId").isInt().withMessage("permissionId debe ser un número"),
   ],
   handleValidationErrors,
@@ -107,7 +107,7 @@ router.delete(
   "/:permissionId",
   [
     authenticateToken,
-    checkPermission("users", "update"),
+    authorize("dev"),
     param("permissionId").isInt().withMessage("permissionId debe ser un número"),
   ],
   handleValidationErrors,
